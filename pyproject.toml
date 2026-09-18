@@ -5,7 +5,7 @@ description = "Query ServiceNow's REST APIs by reusing an SSO browser session in
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "requests>=2.31",
+    "requests>=2.25",
 ]
 
 [project.optional-dependencies]
