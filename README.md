@@ -56,6 +56,30 @@ uv sync --extra login
 
 If that URL carries no credentials, authenticate it.
 
+**Check which Artifactory repo the URL names.** A `*-local` repo holds only what
+your own organisation publishes — it does not proxy pypi.org, so third-party
+packages are legitimately absent and uv reports them as not found:
+
+```
+DEBUG Sending fresh GET request for:
+      https://artifactory.example.com/artifactory/api/pypi/pypi-local/simple/requests/
+```
+
+Third-party packages come from a `*-remote` proxy repo, or from the *virtual*
+repo that aggregates local and remote. Swap the repo segment and probe it:
+
+```sh
+for repo in pypi pypi-virtual pypi-remote pypi-local; do
+  printf '%-16s -> ' "$repo"
+  curl -sS -o /dev/null -w '%{http_code}\n' \
+    "https://artifactory.example.com/artifactory/api/pypi/$repo/simple/requests/"
+done
+```
+
+`uv sync -v` prints every URL it requests, which is the fastest way to see what
+index you are actually hitting. Expect it to also log `Resolving despite existing
+lockfile due to missing remote index` — that is the lockfile churn described above.
+
 Pick one (uv reads all three; keep the URL and token out of the repo):
 
 ```sh
