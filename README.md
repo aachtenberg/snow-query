@@ -28,10 +28,33 @@ with `Failed to spawn: playwright`.
 
 ### Behind Artifactory or another private index
 
-If packages come from an authenticated Artifactory, an unauthenticated uv gets an
-empty or rejected package listing back, so it reports the package as missing and
-fails with `no solution found when resolving dependencies` rather than a clear
-401. **Authenticate to the index first** — that is usually the whole problem.
+**uv does not read `pip.conf` / `pip.ini`.** If your machine is set up for a
+private index through pip's config, pip works and uv quietly falls back to
+pypi.org — which a corporate network usually blocks. uv only takes an index from
+`uv.toml`, `[tool.uv]` in `pyproject.toml`, `UV_*` environment variables, or the
+command line.
+
+Either way — no index configured, or one configured but unauthenticated — uv gets
+nothing back and reports the package as *missing* rather than unreachable:
+
+```
+error: No solution found when resolving dependencies
+  cause: Because requests was not found in the package registry and your project
+         depends on requests>=2.25, we can conclude that your project's
+         requirements are unsatisfiable.
+```
+
+That is an index problem, not a version problem. `requests` is on every mirror;
+if uv cannot find it, it is not reaching an index it can read. Start by copying
+pip's index URL over:
+
+```sh
+pip config list        # look for index-url / global.index-url
+export UV_DEFAULT_INDEX="<that URL>"
+uv sync --extra login
+```
+
+If that URL carries no credentials, authenticate it.
 
 Pick one (uv reads all three; keep the URL and token out of the repo):
 
@@ -39,8 +62,10 @@ Pick one (uv reads all three; keep the URL and token out of the repo):
 # 1. credentials in the index URL
 export UV_DEFAULT_INDEX="https://$USER:$ARTIFACTORY_TOKEN@artifactory.example.com/artifactory/api/pypi/pypi/simple"
 
-# 2. ~/.netrc  (chmod 600)
+# 2. netrc  (chmod 600; on Windows use %USERPROFILE%\.netrc and set NETRC
+#    explicitly, since the filename is sometimes _netrc there)
 #    machine artifactory.example.com login <user> password <identity-token>
+export NETRC="$HOME/.netrc"
 export UV_DEFAULT_INDEX="https://artifactory.example.com/artifactory/api/pypi/pypi/simple"
 
 # 3. keyring, for SSO-issued tokens
