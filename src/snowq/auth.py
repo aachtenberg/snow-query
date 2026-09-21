@@ -187,7 +187,8 @@ def login_with_browser(
         from playwright.sync_api import sync_playwright
     except ImportError as e:  # pragma: no cover - depends on optional extra
         raise RuntimeError(
-            "browser login needs the 'login' extra: uv sync --extra login && uv run playwright install chromium"
+            "browser login needs the 'login' extra: uv sync --extra login && "
+            "uv run --extra login playwright install chromium"
         ) from e
 
     base = normalize_instance(instance)

@@ -19,8 +19,32 @@ Everything runs as **you**, with your roles and ACLs. Treat the session file lik
 
 ```sh
 uv sync --extra login                 # or --extra all to include browser-cookie import
-uv run playwright install chromium    # skip if you'll use --channel chrome / msedge
+uv run --extra login playwright install chromium   # skip if you'll use --channel chrome / msedge
 ```
+
+`uv run` re-syncs the environment first and drops extras unless you name them, so
+`uv run playwright ...` without `--extra login` uninstalls Playwright and then fails
+with `Failed to spawn: playwright`.
+
+### Behind a corporate mirror or proxy
+
+`uv` resolves against the index it is configured with, so a partial internal mirror
+can fail with `no solution found when resolving dependencies` even though `uv.lock`
+is valid. Things that help, roughly in order:
+
+```sh
+uv sync --extra login --index-url "$UV_INDEX_URL"   # point uv at the mirror explicitly
+uv run --no-sync --extra login playwright install chromium  # skip re-resolution once synced
+uv --native-tls sync --extra login                  # use the OS trust store for TLS interception
+```
+
+If the mirror simply does not carry a Playwright new enough for `playwright>=1.44`,
+loosen the pin in `pyproject.toml` to whatever it does carry, or skip Playwright's
+browser download entirely and drive an installed browser with
+`snowq -i acme login --channel chrome` (or `msedge`). `playwright install` pulls
+browser binaries from `cdn.playwright.dev`, not from the package index — if that
+host is blocked, set `PLAYWRIGHT_DOWNLOAD_HOST` to your internal mirror or use
+`--channel`. `snowq -i acme import-browser firefox` needs no Playwright at all.
 
 ## Getting a session
 
