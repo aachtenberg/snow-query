@@ -49,10 +49,16 @@ if uv cannot find it, it is not reaching an index it can read. Start by copying
 pip's index URL over:
 
 ```sh
-pip config list        # look for index-url / global.index-url
-export UV_DEFAULT_INDEX="<that URL>"
-uv sync --extra login
+echo "$PIP_INDEX_URL"  # `pip config list` shows config FILES only, not env vars
+pip config debug       # this one does include the environment-variable section
+uv sync --extra login --index "$PIP_INDEX_URL"
 ```
+
+`--index` puts that URL at the front of the search order — above `--default-index`
+and above anything in `uv.toml` — so it is the reliable way to test a URL before
+making it permanent. If pip works and uv
+does not, this is nearly always why: the index lives in `PIP_INDEX_URL`, which
+configures pip and nothing else.
 
 If that URL carries no credentials, authenticate it.
 
