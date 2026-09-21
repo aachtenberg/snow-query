@@ -289,7 +289,7 @@ snowq query change_request -q "cmdb_ci.name=PRDAPP001" \
 snowq query task_ci -q "task.number=CHG0031234" -f ci_item -d true -n 0 -o table
 
 # changes touching anything in one support group's estate
-snowq query change_request -q "cmdb_ci.support_group.name=Core Banking Infrastructure" \
+snowq query change_request -q "cmdb_ci.support_group.name=Unix Platform Engineering" \
       -f number,cmdb_ci,type,start_date,state -d true -n 0 -o csv
 ```
 
@@ -301,6 +301,29 @@ or `year`.
 Everything here is read-only and runs as you, so results are already filtered by
 your ACLs. A query returning nothing can mean the records do not exist *or* that
 you cannot see them; `snowq count` on the same filter tells you which.
+
+## Scheduled exports
+
+`examples/export.py` replaces the recurring "open the list view, filter,
+right-click, Export > CSV" chore. Each pull is defined once in `EXPORTS`, and
+every run writes `<name>-YYYY-MM-DD.csv`, so you get a dated trail instead of
+overwriting last month's file.
+
+```sh
+python examples/export.py -i acme -o ./exports
+python examples/export.py -i acme --only servers      # just one
+```
+
+It exits 3 when the session has expired and 4 when the instance is unreachable,
+so a scheduled run fails loudly rather than quietly writing empty files. A single
+failing table does not abort the others.
+
+The catch worth planning for: this rides your browser session, so an unattended
+schedule still needs someone to refresh it — daily-ish for a cookie header,
+longer if you use `snowq login` with a persistent profile. That makes it a good
+fit for a desk-side chore on a weekly or monthly cadence, and a poor one for an
+unattended server. For that, ask your ServiceNow team for a service account and
+integration credentials.
 
 ## As a library
 

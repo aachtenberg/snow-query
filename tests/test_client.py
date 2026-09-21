@@ -162,7 +162,7 @@ def test_user_agent_is_overridable(monkeypatch):
 
 def test_token_taken_from_x_usertoken_response_header():
     """A logged-in session gets its token back on an unauthenticated REST call."""
-    token = "0c58ce9447e383dcfbeeb11f536d43df"
+    token = "a" * 32
 
     def handler(method, path, params, headers):
         if path == "/api/now/table/sys_user":
