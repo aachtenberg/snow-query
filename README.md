@@ -92,6 +92,28 @@ is a separate firewall rule, so set `PLAYWRIGHT_DOWNLOAD_HOST` to your internal
 mirror or use `--channel`. `snowq -i acme import-browser firefox` needs no
 Playwright at all.
 
+### If you cannot reach any index at all
+
+You do not need uv, a virtualenv, or an install. `requests` is the only hard
+dependency, and corporate Python builds usually already have it — check with
+`python -c "import requests"`. If that works, run straight from the checkout:
+
+```sh
+cd snow-query
+export PYTHONPATH=src        # this is a src-layout, so the package is not importable without it
+python -m snowq -i acme import-cookie   # paste the Cookie header, then Ctrl-D (Ctrl-Z on Windows)
+python -m snowq -i acme whoami
+python -m snowq -i acme query incident -q 'active=true' -n 5
+```
+
+In PowerShell that export is `$env:PYTHONPATH = "src"`. To get the header: open
+the instance in the browser where you are already logged in, DevTools → Network →
+click any request to the instance → Request Headers → copy the whole `Cookie:`
+line. This skips `login` and `import-browser`, which are the two commands
+that need the optional extras; the client scrapes the `g_ck` CSRF token itself, so
+a pasted cookie header is enough to read. The session lasts as long as your browser
+session does — paste a fresh one when it expires.
+
 ## Getting a session
 
 | Command | When to use it |
