@@ -136,10 +136,24 @@ python -m snowq -i acme whoami
 python -m snowq -i acme query incident -q 'active=true' -n 5
 ```
 
-In PowerShell that export is `$env:PYTHONPATH = "src"`. To get the header: open
-the instance in the browser where you are already logged in, DevTools → Network →
-click any request to the instance → Request Headers → copy the whole `Cookie:`
-line. This skips `login` and `import-browser`, which are the two commands
+In PowerShell that export is `$env:PYTHONPATH = "src"`.
+
+To get the header:
+
+1. Open the instance in the browser where SSO already has you logged in.
+2. `F12` → **Network** tab.
+3. `Ctrl+R` to reload — a cached page may show only "provisional headers".
+4. Click a request to the instance host itself (`navpage.do`, or anything under
+   `/api/now/`) — not one to your IdP or a CDN.
+5. **Headers** → **Request Headers** → right-click the `Cookie:` value → Copy value.
+6. Save it to `cookie.txt` and redirect it in, which avoids paste and EOF quirks:
+   `python -m snowq -i acme import-cookie < cookie.txt`. Delete the file after.
+
+Paste the whole value even if it is long; only well-formed `name=value` pairs are
+kept. Do **not** use `document.cookie` from the console — `JSESSIONID` is
+`HttpOnly`, so it is missing there and the session will not authenticate.
+
+This skips `login` and `import-browser`, which are the two commands
 that need the optional extras; the client scrapes the `g_ck` CSRF token itself, so
 a pasted cookie header is enough to read. The session lasts as long as your browser
 session does — paste a fresh one when it expires.

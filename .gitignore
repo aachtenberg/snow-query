@@ -6,3 +6,5 @@ dist/
 # Saved sessions are live credentials — never commit them.
 *.session.json
 sessions/
+# A Cookie header pasted from devtools is one too.
+cookie.txt
