@@ -13,6 +13,8 @@ import json
 import os
 import sys
 
+import requests
+
 from . import auth
 from .client import SessionExpired, SnowClient
 
@@ -83,6 +85,12 @@ def main(argv: list[str] | None = None) -> int:
     except SessionExpired as e:
         print(f"snowq: {e}\n  run: snowq -i {args.instance} login", file=sys.stderr)
         return 3
+    except requests.RequestException as e:
+        # Corporate networks are the usual cause: a proxy that needs HTTPS_PROXY
+        # set, or TLS interception that needs REQUESTS_CA_BUNDLE.
+        print(f"snowq: could not reach {args.instance}: {e.__class__.__name__}", file=sys.stderr)
+        print(f"  {e}", file=sys.stderr)
+        return 4
     except (RuntimeError, ValueError, TimeoutError) as e:
         print(f"snowq: {e}", file=sys.stderr)
         return 1

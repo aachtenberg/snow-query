@@ -130,3 +130,20 @@ def test_cookie_header_import_and_private_save(tmp_path, monkeypatch):
     assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
     loaded = auth.load_session("acme.service-now.com")
     assert loaded.to_jar().get("JSESSIONID") == "abc"
+
+
+def test_network_failure_reports_cleanly(monkeypatch, capsys):
+    """A dead network should not dump a traceback at the user."""
+    import requests
+
+    from snowq import cli
+
+    def boom(*a, **kw):
+        raise requests.ConnectionError("no route to host")
+
+    monkeypatch.setattr(cli.auth, "load_session", boom)
+    code = cli.main(["-i", "acme", "whoami"])
+    assert code == 4
+    err = capsys.readouterr().err
+    assert "could not reach acme" in err
+    assert "Traceback" not in err
