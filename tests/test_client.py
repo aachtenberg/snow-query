@@ -65,6 +65,8 @@ def test_token_scraped_and_sent_as_x_usertoken():
     token = "f" * 32
 
     def handler(method, path, params, headers):
+        if path == "/api/now/table/sys_user":  # token probe; this instance withholds it
+            return 200, JSON, {"result": []}
         if path == "/navpage.do":
             return 200, HTML, f"<script>var g_ck = '{token}';</script>"
         assert headers["X-UserToken"] == token
@@ -104,6 +106,8 @@ def test_stale_token_is_rescraped_once():
     state = {"api_calls": 0}
 
     def handler(method, path, params, headers):
+        if path == "/api/now/table/sys_user":  # token probe; this instance withholds it
+            return 200, JSON, {"result": []}
         if path == "/navpage.do":
             return 200, HTML, "var g_ck = 'new0000000000000000000000000000';"
         state["api_calls"] += 1
@@ -154,3 +158,19 @@ def test_user_agent_is_overridable(monkeypatch):
     monkeypatch.setenv("SNOWQ_USER_AGENT", "Mozilla/5.0 Edg/141.0.0.0")
     c = SnowClient("acme", requests.cookies.RequestsCookieJar())
     assert c.http.headers["User-Agent"] == "Mozilla/5.0 Edg/141.0.0.0"
+
+
+def test_token_taken_from_x_usertoken_response_header():
+    """A logged-in session gets its token back on an unauthenticated REST call."""
+    token = "0c58ce9447e383dcfbeeb11f536d43df"
+
+    def handler(method, path, params, headers):
+        if path == "/api/now/table/sys_user":
+            hdrs = {**JSON, "X-UserToken-Response": token, "X-Is-Logged-In": "true"}
+            return 401, hdrs, {"error": {"message": "User is not authenticated"}}
+        assert headers["X-UserToken"] == token
+        return 200, JSON, {"result": [{"number": "INC1"}]}
+
+    client, adapter = make_client(handler)
+    assert list(client.table("incident", limit=1)) == [{"number": "INC1"}]
+    assert "/navpage.do" not in [c[1] for c in adapter.calls]

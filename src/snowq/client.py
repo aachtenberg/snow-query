@@ -14,6 +14,11 @@ from .auth import StoredSession, cookies_from_jar, normalize_instance
 # UI pages that embed the session's CSRF token, tried in order. navpage.do is
 # the classic UI frame; the Next Experience shell sets window.g_ck too.
 _TOKEN_PAGES = ("/navpage.do", "/now/nav/ui/home", "/home.do")
+# A REST call returns the session's token in X-UserToken-Response even when it
+# rejects the call for not carrying one — cheaper and far more reliable than
+# scraping a UI page, which varies by instance and UI version.
+_TOKEN_PROBE = "/api/now/table/sys_user"
+_TOKEN_HEADER = "X-UserToken-Response"
 _G_CK_RE = re.compile(r"""g_ck\s*[=:]\s*['"]([A-Za-z0-9]{20,})['"]""")
 _DEFAULT_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snowq"
 _LOGIN_MARKERS = ("login.do", "saml", "sso", "oauth", "logout", "auth_redirect", "external_login")
@@ -64,7 +69,21 @@ class SnowClient:
     # --- token -----------------------------------------------------------------
 
     def refresh_token(self) -> str:
-        """Scrape g_ck from a UI page. Raises SessionExpired if we get bounced to login."""
+        """Get the session's g_ck, asking the API before scraping a UI page.
+
+        Raises SessionExpired if we get bounced to login.
+        """
+        probe = self.http.get(
+            self.base + _TOKEN_PROBE,
+            params={"sysparm_limit": 1, "sysparm_fields": "sys_id"},
+            timeout=self.timeout,
+            allow_redirects=False,
+        )
+        token = probe.headers.get(_TOKEN_HEADER)
+        if token:
+            self.g_ck = token
+            return token
+
         for path in _TOKEN_PAGES:
             r = self.http.get(self.base + path, timeout=self.timeout, headers={"Accept": "text/html"})
             self._raise_if_bounced(r)
@@ -106,7 +125,10 @@ class SnowClient:
             # A stale g_ck (e.g. after the instance rotated it) shows up as a 401 with
             # live cookies; re-scrape once before giving up.
             if r.status_code == 401 and attempt == 1:
-                self.refresh_token()
+                # The 401 itself usually carries the current token; take it.
+                self.g_ck = r.headers.get(_TOKEN_HEADER) or None
+                if not self.g_ck:
+                    self.refresh_token()
                 continue
             if r.status_code == 401:
                 raise SessionExpired("401 Unauthorized; the SSO session has expired")

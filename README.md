@@ -176,7 +176,11 @@ curl -sS -i -H "Cookie: $(tr -d '\r\n' < cookie.txt)" \
   Either the copied request was to the IdP rather than the instance, or the
   instance host does not match `-i` (check the host in the browser's address bar;
   a vanity domain like `snow.corp.example` is not `corp.service-now.com`).
-* **401** — the session is genuinely gone; grab a fresh header.
+* **401 with `X-Is-Logged-In: true`** — the cookies are fine. ServiceNow requires
+  the CSRF token on REST calls and returns the right one in
+  `X-UserToken-Response`; snowq picks that up automatically.
+* **401 with `X-Is-Logged-In: false`** — the session is genuinely gone; grab a
+  fresh header.
 
 Cookie headers last only as long as the browser session behind them, so expect to
 re-paste periodically. `snowq login` avoids that, but needs the `login` extra.
