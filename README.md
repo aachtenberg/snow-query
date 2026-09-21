@@ -26,25 +26,46 @@ uv run --extra login playwright install chromium   # skip if you'll use --channe
 `uv run playwright ...` without `--extra login` uninstalls Playwright and then fails
 with `Failed to spawn: playwright`.
 
-### Behind a corporate mirror or proxy
+### Behind Artifactory or another private index
 
-`uv` resolves against the index it is configured with, so a partial internal mirror
-can fail with `no solution found when resolving dependencies` even though `uv.lock`
-is valid. Things that help, roughly in order:
+If packages come from an authenticated Artifactory, an unauthenticated uv gets an
+empty or rejected package listing back, so it reports the package as missing and
+fails with `no solution found when resolving dependencies` rather than a clear
+401. **Authenticate to the index first** — that is usually the whole problem.
+
+Pick one (uv reads all three; keep the URL and token out of the repo):
 
 ```sh
-uv sync --extra login --index-url "$UV_INDEX_URL"   # point uv at the mirror explicitly
-uv run --no-sync --extra login playwright install chromium  # skip re-resolution once synced
-uv --native-tls sync --extra login                  # use the OS trust store for TLS interception
+# 1. credentials in the index URL
+export UV_DEFAULT_INDEX="https://$USER:$ARTIFACTORY_TOKEN@artifactory.example.com/artifactory/api/pypi/pypi/simple"
+
+# 2. ~/.netrc  (chmod 600)
+#    machine artifactory.example.com login <user> password <identity-token>
+export UV_DEFAULT_INDEX="https://artifactory.example.com/artifactory/api/pypi/pypi/simple"
+
+# 3. keyring, for SSO-issued tokens
+uv sync --extra login --keyring-provider subprocess
 ```
 
-If the mirror simply does not carry a Playwright new enough for `playwright>=1.44`,
+Then `uv sync --extra login`. Note that `uv.lock` pins every package to a
+`pypi.org` URL, so syncing from a different index rewrites it — leave that churn
+out of your commits.
+
+Other things that bite on a corporate network:
+
+```sh
+uv --native-tls sync --extra login   # TLS interception: use the OS trust store
+uv run --no-sync --extra login playwright install chromium  # skip re-resolution once synced
+```
+
+If the mirror does not carry a Playwright new enough for `playwright>=1.44`,
 loosen the pin in `pyproject.toml` to whatever it does carry, or skip Playwright's
 browser download entirely and drive an installed browser with
 `snowq -i acme login --channel chrome` (or `msedge`). `playwright install` pulls
-browser binaries from `cdn.playwright.dev`, not from the package index — if that
-host is blocked, set `PLAYWRIGHT_DOWNLOAD_HOST` to your internal mirror or use
-`--channel`. `snowq -i acme import-browser firefox` needs no Playwright at all.
+browser binaries from `cdn.playwright.dev`, not from the package index — that host
+is a separate firewall rule, so set `PLAYWRIGHT_DOWNLOAD_HOST` to your internal
+mirror or use `--channel`. `snowq -i acme import-browser firefox` needs no
+Playwright at all.
 
 ## Getting a session
 
