@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from typing import Any, Iterator
 from urllib.parse import urlparse
@@ -14,6 +15,7 @@ from .auth import StoredSession, cookies_from_jar, normalize_instance
 # the classic UI frame; the Next Experience shell sets window.g_ck too.
 _TOKEN_PAGES = ("/navpage.do", "/now/nav/ui/home", "/home.do")
 _G_CK_RE = re.compile(r"""g_ck\s*[=:]\s*['"]([A-Za-z0-9]{20,})['"]""")
+_DEFAULT_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snowq"
 _LOGIN_MARKERS = ("login.do", "saml", "sso", "oauth", "logout", "auth_redirect", "external_login")
 
 
@@ -43,8 +45,11 @@ class SnowClient:
         self.http.headers.update(
             {
                 "Accept": "application/json",
-                # Some instances gate API access on looking like the browser that owns the session.
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snowq",
+                # Some instances gate API access on looking like the browser that owns
+                # the session. If yours bounces a valid cookie straight to the login
+                # page, copy the User-Agent from the same devtools request that gave
+                # you the cookies and set $SNOWQ_USER_AGENT to it.
+                "User-Agent": os.environ.get("SNOWQ_USER_AGENT") or _DEFAULT_UA,
             }
         )
 

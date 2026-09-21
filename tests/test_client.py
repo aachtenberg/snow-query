@@ -147,3 +147,10 @@ def test_network_failure_reports_cleanly(monkeypatch, capsys):
     err = capsys.readouterr().err
     assert "could not reach acme" in err
     assert "Traceback" not in err
+
+
+def test_user_agent_is_overridable(monkeypatch):
+    """Instances that pin the session to a browser UA need the real one."""
+    monkeypatch.setenv("SNOWQ_USER_AGENT", "Mozilla/5.0 Edg/141.0.0.0")
+    c = SnowClient("acme", requests.cookies.RequestsCookieJar())
+    assert c.http.headers["User-Agent"] == "Mozilla/5.0 Edg/141.0.0.0"

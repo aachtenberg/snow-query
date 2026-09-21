@@ -158,6 +158,29 @@ that need the optional extras; the client scrapes the `g_ck` CSRF token itself, 
 a pasted cookie header is enough to read. The session lasts as long as your browser
 session does — paste a fresh one when it expires.
 
+### "the SSO session has expired"
+
+snowq raises this whenever a request is redirected off the instance or to a login
+page, which covers more than an actually-expired session. If a freshly pasted
+cookie header fails straight away, test the cookies without snowq in the way:
+
+```sh
+curl -sS -i -H "Cookie: $(tr -d '\r\n' < cookie.txt)" \
+  "https://acme.service-now.com/api/now/table/sys_user?sysparm_limit=1" | head -15
+```
+
+* **200 and JSON** — the cookies are good, so snowq's headers are the problem.
+  The usual cause is a UA-gated instance: copy the `User-Agent` from the same
+  devtools request and `export SNOWQ_USER_AGENT="<that string>"`.
+* **302 to `login.do` or your IdP** — the cookies are not a working session.
+  Either the copied request was to the IdP rather than the instance, or the
+  instance host does not match `-i` (check the host in the browser's address bar;
+  a vanity domain like `snow.corp.example` is not `corp.service-now.com`).
+* **401** — the session is genuinely gone; grab a fresh header.
+
+Cookie headers last only as long as the browser session behind them, so expect to
+re-paste periodically. `snowq login` avoids that, but needs the `login` extra.
+
 ## Getting a session
 
 | Command | When to use it |
