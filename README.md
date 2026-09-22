@@ -60,6 +60,11 @@ puts `src/` on the path, and runs the CLI straight from the checkout:
 ./snowq -i acme query incident -q 'active=true' -n 5 -o table
 ```
 
+```bat
+snowq.cmd doctor
+snowq.cmd -i acme import-cookie < cookie.txt
+```
+
 `doctor` prints which interpreter it picked, which optional extras are present,
 and whether you have a saved session. The wrapper prefers a synced `.venv` when
 there is one, so the same command keeps working after a successful install.
@@ -71,10 +76,10 @@ front instead of failing deep inside the login flow.
 steps for `cookie.txt`; [docs/install.md](docs/install.md) covers pointing uv at
 your real index.
 
-The wrapper is POSIX `sh`, so on Windows run it from Git Bash. Without it, the
-equivalent is `export PYTHONPATH=src` (`$env:PYTHONPATH = "src"` in PowerShell)
-followed by `python -m snowq ...` — skipping that export is what produces
-`No module named snowq`.
+`./snowq` is POSIX `sh` (Git Bash on Windows); `snowq.cmd` is the same thing for
+`cmd` and PowerShell. Without either, the equivalent is `export PYTHONPATH=src`
+(`$env:PYTHONPATH = "src"` in PowerShell) followed by `python -m snowq ...` —
+skipping that export is what produces `No module named snowq`.
 
 ## Getting a session
 
@@ -106,6 +111,13 @@ snowq logout
 `-n 0` fetches every matching record, paging 500 at a time. `-d true` returns
 display values instead of sys_ids for reference and choice fields; `-d all` returns
 both.
+
+`-o` picks the shape: `json` (default), `jsonl` for streaming into `jq`, `csv` for
+a spreadsheet, and `table` for reading in the terminal. `table` sizes each column
+to its content, caps any one column at 60 characters, and shrinks the widest
+columns so the row fits your terminal rather than wrapping — narrow the window or
+pass fewer `-f` fields if it still truncates. The row count goes to stderr, so
+`... -o table 2>/dev/null` leaves just the table.
 
 The `-q` encoded-query syntax is what the UI list filter builds — build the filter
 there, right-click the breadcrumb → **Copy query**, and paste it. Dot-walking works

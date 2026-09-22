@@ -11,6 +11,7 @@ import argparse
 import csv
 import json
 import os
+import shutil
 import sys
 
 import requests
@@ -166,6 +167,49 @@ def _cell(value) -> str:
     return "" if value is None else str(value)
 
 
+MAX_COL = 60
+COL_GAP = 2
+MIN_COL = 8
+
+
+def _ellipsis() -> str:
+    """'…' where the terminal can encode it, '...' on a legacy code page."""
+    enc = getattr(sys.stdout, "encoding", None) or "ascii"
+    try:
+        "\u2026".encode(enc)
+    except (UnicodeEncodeError, LookupError):
+        return "..."
+    return "\u2026"
+
+
+def _clip(value: str, width: int, ell: str) -> str:
+    if len(value) <= width:
+        return value
+    if width <= len(ell):
+        return value[:width]
+    return value[: width - len(ell)] + ell
+
+
+def _column_widths(cols: list[str], cells: list[list[str]], term: int | None = None) -> list[int]:
+    """Size columns to their content, then shrink the widest until the row fits.
+
+    Without this a wide result wraps in the terminal and the alignment that
+    makes a table readable is exactly what is lost.
+    """
+    widths = [
+        min(MAX_COL, max([len(c)] + [len(row[i]) for row in cells]))
+        for i, c in enumerate(cols)
+    ]
+    if not widths:
+        return widths
+    if term is None:
+        term = shutil.get_terminal_size((100, 24)).columns
+    budget = term - COL_GAP * (len(widths) - 1)
+    while sum(widths) > budget and max(widths) > MIN_COL:
+        widths[widths.index(max(widths))] -= 1
+    return widths
+
+
 def _emit_rows(rows, fmt: str, fields: list[str] | None) -> None:
     if fmt == "jsonl":
         for r in rows:
@@ -183,13 +227,18 @@ def _emit_rows(rows, fmt: str, fields: list[str] | None) -> None:
             w.writerow([_cell(r.get(c)) for c in cols])
         return
     # table
-    width = 60
-    cells = [[_cell(r.get(c)).replace("\n", " ")[:width] for c in cols] for r in rows]
-    widths = [max([len(c)] + [len(row[i]) for row in cells]) for i, c in enumerate(cols)]
-    print("  ".join(c.ljust(w) for c, w in zip(cols, widths)))
-    print("  ".join("-" * w for w in widths))
+    cells = [[_cell(r.get(c)).replace("\n", " ") for c in cols] for r in rows]
+    widths = _column_widths(cols, cells)
+    ell = _ellipsis()
+
+    def line(values) -> str:
+        # rstrip so the last column carries no trailing padding
+        return "  ".join(_clip(v, w, ell).ljust(w) for v, w in zip(values, widths)).rstrip()
+
+    print(line(cols))
+    print("  ".join("-" * w for w in widths).rstrip())
     for row in cells:
-        print("  ".join(v.ljust(w) for v, w in zip(row, widths)))
+        print(line(row))
     print(f"({len(rows)} rows)", file=sys.stderr)
 
 

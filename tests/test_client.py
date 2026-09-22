@@ -7,7 +7,7 @@ import pytest
 import requests
 from requests.adapters import BaseAdapter
 
-from snowq import auth
+from snowq import auth, cli
 from snowq.client import SessionExpired, SnowClient, extract_g_ck
 
 INSTANCE = "https://acme.service-now.com"
@@ -174,3 +174,46 @@ def test_token_taken_from_x_usertoken_response_header():
     client, adapter = make_client(handler)
     assert list(client.table("incident", limit=1)) == [{"number": "INC1"}]
     assert "/navpage.do" not in [c[1] for c in adapter.calls]
+
+
+# --- table rendering -------------------------------------------------------
+
+
+def test_column_widths_shrink_to_fit_the_terminal():
+    cols = ["number", "short_description", "state"]
+    cells = [["CHG0031234", "x" * 200, "Scheduled"]]
+
+    wide = cli._column_widths(cols, cells, term=200)
+    assert wide[1] == cli.MAX_COL  # never wider than the cap, however big the terminal
+
+    narrow = cli._column_widths(cols, cells, term=60)
+    assert sum(narrow) + cli.COL_GAP * (len(narrow) - 1) <= 60
+    assert narrow[0] == len("CHG0031234")  # the widest column gives way first
+
+
+def test_column_widths_stop_at_a_readable_floor():
+    cols = ["a", "b"]
+    cells = [["x" * 50, "y" * 50]]
+    assert min(cli._column_widths(cols, cells, term=4)) == cli.MIN_COL
+
+
+def test_clip_marks_truncation():
+    assert cli._clip("abcdefghij", 5, "…") == "abcd…"
+    assert cli._clip("abc", 10, "…") == "abc"
+    assert cli._clip("abcdef", 2, "...") == "ab"  # no room for the marker
+
+
+def test_ellipsis_falls_back_on_a_legacy_code_page(monkeypatch):
+    class Out:
+        encoding = "cp437"
+
+    monkeypatch.setattr(cli.sys, "stdout", Out())
+    assert cli._ellipsis() == "..."
+
+
+def test_table_rows_carry_no_trailing_padding(capsys):
+    rows = [{"number": "CHG1", "state": "Closed"}, {"number": "CHG2", "state": "Open"}]
+    cli._emit_rows(rows, "table", ["number", "state"])
+    out = capsys.readouterr().out.splitlines()
+    assert all(line == line.rstrip() for line in out)
+    assert out[0].split() == ["number", "state"]

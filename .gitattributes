@@ -1,1 +1,2 @@
 snowq text eol=lf
+snowq.cmd text eol=crlf

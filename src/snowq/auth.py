@@ -150,7 +150,10 @@ def import_from_browser(instance: str, browser: str = "chrome") -> StoredSession
     try:
         import browser_cookie3
     except ImportError as e:  # pragma: no cover - depends on optional extra
-        raise RuntimeError("browser import needs the 'browser' extra: uv sync --extra browser") from e
+        raise RuntimeError(
+            "browser import needs the 'browser' extra: uv sync --extra browser\n"
+            "  no package index? use import-cookie instead, which needs no extras"
+        ) from e
 
     loader = getattr(browser_cookie3, browser, None)
     if loader is None:
@@ -188,7 +191,8 @@ def login_with_browser(
     except ImportError as e:  # pragma: no cover - depends on optional extra
         raise RuntimeError(
             "browser login needs the 'login' extra: uv sync --extra login && "
-            "uv run --extra login playwright install chromium"
+            "uv run --extra login playwright install chromium\n"
+            "  no package index? use import-cookie instead, which needs no extras"
         ) from e
 
     base = normalize_instance(instance)

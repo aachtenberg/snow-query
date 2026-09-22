@@ -118,7 +118,8 @@ cd snow-query
 ./snowq -i acme query incident -q 'active=true' -n 5
 ```
 
-It is POSIX `sh`, so on Windows run it from Git Bash. By hand it is:
+On Windows, `snowq.cmd` is the same wrapper for `cmd` and PowerShell; `./snowq`
+itself is POSIX `sh`, so it wants Git Bash. By hand it is:
 
 ```sh
 export PYTHONPATH=src        # src-layout; without this you get "No module named snowq"
