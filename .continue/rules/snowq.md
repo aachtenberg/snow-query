@@ -1,9 +1,7 @@
 ---
 name: snowq
-description: Query ServiceNow from the command line with snowq — encoded-query syntax, discovering real field names, and recipes for incident, change_request, cmdb_ci_* and sys_user_group. Use when asked to pull ServiceNow data, write or fix an encoded query, find which field or choice value an instance uses, or export records to CSV.
+description: Querying ServiceNow with the snowq CLI
 ---
-
-# Querying ServiceNow with snowq
 
 <!-- Generated from AGENTS.md by util/gen_agent_docs.py — edit that, not this. -->
 

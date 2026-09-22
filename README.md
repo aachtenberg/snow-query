@@ -141,11 +141,24 @@ prep, emergency-change audits, and scheduled CSV exports via
 
 ## For coding agents
 
-`.claude/skills/snowq/SKILL.md` is a skill for LLM-driven use: encoded-query
+**[AGENTS.md](AGENTS.md)** is the guidance for LLM-driven use: encoded-query
 syntax, the flags that decide whether output is usable, exit-code handling, and
 the rule that matters most — discover field and choice values from the instance
 rather than guessing them, because a customised instance answers a wrong guess
 with an empty result rather than an error.
+
+Every assistant looks for its own filename, so the shared core of that file is
+generated into each one — Claude Code (`CLAUDE.md`, plus a skill under
+`.claude/skills/`), Copilot (`.github/copilot-instructions.md`), Cursor
+(`.cursor/rules/`), Windsurf, Cline and Continue. Edit `AGENTS.md`, then:
+
+```sh
+python util/gen_agent_docs.py           # regenerate
+python util/gen_agent_docs.py --check   # CI: fail if one drifted
+```
+
+`uv run pytest` runs that check, because a stale copy still teaches the rule
+that changed.
 
 ## As a library
 
