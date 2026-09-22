@@ -60,6 +60,8 @@ jobs:
           call snowq.cmd doctor || exit /b 1
           call snowq.cmd -i acme whoami
           if not "%ERRORLEVEL%"=="3" (echo expected exit 3, got %ERRORLEVEL% & exit /b 1)
+          rem the asserted 3 is still the script's exit code; clear it
+          exit /b 0
 
       - name: snowq.cmd from PowerShell
         if: runner.os == 'Windows'
@@ -69,3 +71,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "doctor exited $LASTEXITCODE" }
           .\snowq.cmd -i acme whoami
           if ($LASTEXITCODE -ne 3) { throw "expected exit 3, got $LASTEXITCODE" }
+          # pwsh steps exit with $LASTEXITCODE, which is the 3 we just asserted
+          exit 0

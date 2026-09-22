@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Generate the per-tool agent instruction files from AGENTS.md.
 
+All reads and writes name UTF-8 explicitly: the content has em dashes, and on
+Windows the locale encoding is cp1252, so an unqualified read_text() turns
+them into mojibake and every file looks stale.
+
 Every IDE assistant looks for its own filename, and keeping six hand-written
 copies of the same rules in sync is a losing game — they drift, and a stale
 copy teaching a model to guess field names is worse than no copy at all. So
@@ -70,7 +74,7 @@ TARGETS: dict[str, str] = {
 
 
 def core_block() -> str:
-    text = SOURCE.read_text()
+    text = SOURCE.read_text(encoding="utf-8")
     try:
         body = text.split(START, 1)[1].split(END, 1)[0]
     except IndexError:
@@ -92,14 +96,14 @@ def main(argv: list[str]) -> int:
     for rel, header in TARGETS.items():
         path = ROOT / rel
         want = render(header, core)
-        have = path.read_text() if path.exists() else None
+        have = path.read_text(encoding="utf-8") if path.exists() else None
         if have == want:
             continue
         if check:
             stale.append(rel)
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(want)
+        path.write_text(want, encoding="utf-8")
         print(f"wrote {rel}")
 
     if stale:

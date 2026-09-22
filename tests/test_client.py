@@ -131,7 +131,10 @@ def test_cookie_header_import_and_private_save(tmp_path, monkeypatch):
     stored = auth.import_cookie_header("acme", "Cookie: JSESSIONID=abc; glide_user_route=glide.xyz")
     assert {c["name"] for c in stored.cookies} == {"JSESSIONID", "glide_user_route"}
     path = stored.save()
-    assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
+    if os.name != "nt":
+        # POSIX mode bits only. Windows uses ACLs, so the 0o600 the code asks
+        # for does not come back from stat() there.
+        assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
     loaded = auth.load_session("acme.service-now.com")
     assert loaded.to_jar().get("JSESSIONID") == "abc"
 
