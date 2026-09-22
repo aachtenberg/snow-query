@@ -76,8 +76,30 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _stray_list_hint(extras: list[str]) -> str | None:
+    """A space inside a comma-separated value is the usual cause of a stray arg.
+
+    `-f number, short_description,state` reaches argparse as `-f number,` plus a
+    loose `short_description,state`, and "unrecognized arguments" does not say so.
+    """
+    for extra in extras:
+        if "," in extra and not extra.startswith("-"):
+            return (
+                f"  '{extra}' looks like the tail of a comma-separated list.\n"
+                "  Remove the space after the comma, or quote the whole value."
+            )
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args, extras = parser.parse_known_args(argv)
+    if extras:
+        print(f"snowq: unrecognized arguments: {' '.join(extras)}", file=sys.stderr)
+        hint = _stray_list_hint(extras)
+        if hint:
+            print(hint, file=sys.stderr)
+        return 2
     if not args.instance:
         print("snowq: pass --instance or set SNOWQ_INSTANCE", file=sys.stderr)
         return 2

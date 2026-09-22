@@ -260,3 +260,27 @@ def test_csv_still_emits_every_field(capsys):
     rows = [{"number": "INC1", "u_blank": "", "state": "2"}]
     cli._emit_rows(rows, "csv", None)
     assert capsys.readouterr().out.splitlines()[0] == "number,state,u_blank"
+
+
+def test_stray_comma_list_is_explained(capsys):
+    # `-f number, short_description,state` reaches argparse as two arguments
+    argv = ["-i", "acme", "query", "incident", "-f", "number,", "short_description,state"]
+    assert cli.main(argv) == 2
+    err = capsys.readouterr().err
+    assert "unrecognized arguments: short_description,state" in err
+    assert "Remove the space after the comma" in err
+
+
+def test_unrelated_stray_argument_gets_no_misleading_hint(capsys):
+    assert cli.main(["-i", "acme", "whoami", "bogus"]) == 2
+    err = capsys.readouterr().err
+    assert "unrecognized arguments: bogus" in err
+    assert "comma" not in err
+
+
+def test_csv_list_tolerates_spaces_when_quoted():
+    assert cli._csv_list("number, short_description , state") == [
+        "number",
+        "short_description",
+        "state",
+    ]
