@@ -217,3 +217,46 @@ def test_table_rows_carry_no_trailing_padding(capsys):
     out = capsys.readouterr().out.splitlines()
     assert all(line == line.rstrip() for line in out)
     assert out[0].split() == ["number", "state"]
+
+
+def test_auto_columns_drops_empty_and_leads_with_identifiers():
+    rows = [{"number": "INC1", "short_description": "disk full", "u_blank": "", "sys_id": "abc"}]
+    cols = sorted(rows[0])
+    by_col = {c: [str(r.get(c, "")) for r in rows] for c in cols}
+
+    chosen = cli._auto_columns(cols, by_col, term=200)
+    assert "u_blank" not in chosen  # empty in every row
+    assert chosen[0] == "number"  # identifiers lead, not alphabetical order
+
+
+def test_auto_columns_keeps_one_line_worth():
+    rows = [{f"u_field_{i:03d}": "x" * 20 for i in range(150)}]
+    cols = sorted(rows[0])
+    by_col = {c: [str(r.get(c, "")) for r in rows] for c in cols}
+
+    chosen = cli._auto_columns(cols, by_col, term=100)
+    assert 0 < len(chosen) < 10  # not all 150
+    width = sum(min(cli.MAX_COL, len(by_col[c][0])) for c in chosen)
+    assert width + cli.COL_GAP * (len(chosen) - 1) <= 100
+
+
+def test_explicit_fields_are_never_dropped(capsys):
+    rows = [{"number": "INC1", "u_blank": "", "state": "2"}]
+    cli._emit_rows(rows, "table", ["number", "u_blank", "state"])
+    out = capsys.readouterr()
+    assert out.out.splitlines()[0].split() == ["number", "u_blank", "state"]
+    assert "use -f" not in out.err
+
+
+def test_unfiltered_table_says_how_many_fields_it_hid(capsys):
+    rows = [dict({"number": "INC1"}, **{f"u_{i:03d}": "y" * 30 for i in range(60)})]
+    cli._emit_rows(rows, "table", None)
+    err = capsys.readouterr().err
+    assert "use -f to choose" in err
+    assert "of 61 fields" in err
+
+
+def test_csv_still_emits_every_field(capsys):
+    rows = [{"number": "INC1", "u_blank": "", "state": "2"}]
+    cli._emit_rows(rows, "csv", None)
+    assert capsys.readouterr().out.splitlines()[0] == "number,state,u_blank"

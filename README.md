@@ -113,11 +113,22 @@ display values instead of sys_ids for reference and choice fields; `-d all` retu
 both.
 
 `-o` picks the shape: `json` (default), `jsonl` for streaming into `jq`, `csv` for
-a spreadsheet, and `table` for reading in the terminal. `table` sizes each column
-to its content, caps any one column at 60 characters, and shrinks the widest
-columns so the row fits your terminal rather than wrapping — narrow the window or
-pass fewer `-f` fields if it still truncates. The row count goes to stderr, so
-`... -o table 2>/dev/null` leaves just the table.
+a spreadsheet, and `table` for reading in the terminal.
+
+A ServiceNow table answers with every field it has — `incident` is around 150,
+most of them empty custom ones — so **`-f` is what makes a table readable**:
+
+```sh
+snowq query incident -q 'active=true' -n 5 -o table \
+      -f number,short_description,state,assigned_to -d true
+```
+
+Without `-f`, `table` will not print all 150: it drops the fields that are empty
+in every row, leads with the ones that identify a record (`number`, `state`,
+`assigned_to`, …), keeps what fits one line, and tells you on stderr how many it
+held back. `csv` and `json` are unfiltered either way, so exports keep every
+field. The row count also goes to stderr, so `... -o table 2>/dev/null` leaves
+just the table.
 
 The `-q` encoded-query syntax is what the UI list filter builds — build the filter
 there, right-click the breadcrumb → **Copy query**, and paste it. Dot-walking works

@@ -190,6 +190,51 @@ def _clip(value: str, width: int, ell: str) -> str:
     return value[: width - len(ell)] + ell
 
 
+PREFERRED_COLS = (
+    "number",
+    "name",
+    "short_description",
+    "state",
+    "priority",
+    "severity",
+    "urgency",
+    "assigned_to",
+    "assignment_group",
+    "caller_id",
+    "cmdb_ci",
+    "category",
+    "opened_at",
+    "start_date",
+    "close_code",
+    "sys_created_on",
+    "sys_updated_on",
+)
+
+
+def _auto_columns(cols: list[str], by_col: dict, term: int) -> list[str]:
+    """Pick the columns worth showing when the caller gave no -f.
+
+    A ServiceNow table answers with every field it has — incident is ~150,
+    most of them empty custom ones — so printing all of them is a wall of
+    wrapped text. Drop the columns that are empty in every row, lead with the
+    fields that identify a record, and keep only what fits on one line.
+    """
+    kept = [c for c in cols if any(by_col[c])] or list(cols)
+    rank = {name: i for i, name in enumerate(PREFERRED_COLS)}
+    kept.sort(key=lambda c: (rank.get(c, len(PREFERRED_COLS)), c))
+
+    chosen: list[str] = []
+    used = 0
+    for c in kept:
+        width = min(MAX_COL, max([len(c)] + [len(v) for v in by_col[c]]))
+        cost = width + (COL_GAP if chosen else 0)
+        if chosen and used + cost > term:
+            break
+        chosen.append(c)
+        used += cost
+    return chosen
+
+
 def _column_widths(cols: list[str], cells: list[list[str]], term: int | None = None) -> list[int]:
     """Size columns to their content, then shrink the widest until the row fits.
 
@@ -227,19 +272,26 @@ def _emit_rows(rows, fmt: str, fields: list[str] | None) -> None:
             w.writerow([_cell(r.get(c)) for c in cols])
         return
     # table
-    cells = [[_cell(r.get(c)).replace("\n", " ") for c in cols] for r in rows]
-    widths = _column_widths(cols, cells)
+    by_col = {c: [_cell(r.get(c)).replace("\n", " ") for r in rows] for c in cols}
+    term = shutil.get_terminal_size((100, 24)).columns
+    shown = cols if fields else _auto_columns(cols, by_col, term)
+    cells = [[by_col[c][i] for c in shown] for i in range(len(rows))]
+    widths = _column_widths(shown, cells, term=term)
     ell = _ellipsis()
 
     def line(values) -> str:
         # rstrip so the last column carries no trailing padding
         return "  ".join(_clip(v, w, ell).ljust(w) for v, w in zip(values, widths)).rstrip()
 
-    print(line(cols))
+    print(line(shown))
     print("  ".join("-" * w for w in widths).rstrip())
     for row in cells:
         print(line(row))
-    print(f"({len(rows)} rows)", file=sys.stderr)
+    if len(shown) < len(cols):
+        note = f"({len(rows)} rows; {len(shown)} of {len(cols)} fields — use -f to choose)"
+    else:
+        note = f"({len(rows)} rows)"
+    print(note, file=sys.stderr)
 
 
 if __name__ == "__main__":
