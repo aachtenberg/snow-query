@@ -134,8 +134,9 @@ The `-q` encoded-query syntax is what the UI list filter builds — build the fi
 there, right-click the breadcrumb → **Copy query**, and paste it. Dot-walking works
 too (`cmdb_ci.support_group.name=Unix Platform Engineering`).
 
-**[docs/recipes.md](docs/recipes.md)** has worked examples for server inventory,
-CMDB hygiene, CAB prep, emergency-change audits, and scheduled CSV exports via
+**[docs/recipes.md](docs/recipes.md)** has worked examples: incident queues by
+assignment group, backlog counts per team, server inventory, CMDB hygiene, CAB
+prep, emergency-change audits, and scheduled CSV exports via
 `examples/export.py`.
 
 ## As a library
