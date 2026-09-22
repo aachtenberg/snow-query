@@ -146,8 +146,9 @@ there, right-click the breadcrumb → **Copy query**, and paste it. Dot-walking 
 too (`cmdb_ci.support_group.name=Unix Platform Engineering`).
 
 **[docs/recipes.md](docs/recipes.md)** has worked examples: incident queues by
-assignment group, backlog counts per team, server inventory, CMDB hygiene, CAB
-prep, emergency-change audits, and scheduled CSV exports via
+assignment group, backlog counts per team, problem management (known errors,
+RCA tasks, which problems drive the most incidents), server inventory, CMDB
+hygiene, CAB prep, emergency-change audits, and scheduled CSV exports via
 `examples/export.py`.
 
 ## For coding agents

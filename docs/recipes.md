@@ -1,4 +1,4 @@
-# Recipes: incidents, servers and changes
+# Recipes: incidents, problems, servers and changes
 
 Encoded-query syntax is the same one the list filter builds, so the fastest way to
 write a hard filter is to build it in the UI, right-click the breadcrumb → **Copy
@@ -142,6 +142,106 @@ snowq count incident -q "assignment_group.name=$GROUP^active=true"
 
 State numbers differ per instance — check yours with the `sys_choice` query above
 before trusting `stateIN6,7`.
+
+## Problem management
+
+Problem is where instances diverge most. Older ones drive the lifecycle from
+`problem_state`, newer ones from `state` (Assess, Root Cause Analysis, Fix in
+Progress, Resolved), and plenty of shops add values of their own. Read yours
+before filtering on either:
+
+```sh
+snowq query sys_choice -q "name=problem^elementINstate,problem_state" \
+      -f element,value,label -n 0 -o table
+
+# and see which of the two this instance actually populates
+snowq query problem -f number,state,problem_state -d all -n 5 -o json
+```
+
+### The open queue
+
+```sh
+# everything this group owns that is not closed
+snowq query problem -q "assignment_group.name=$GROUP^active=true" \
+      -f number,short_description,state,priority,assigned_to,opened_at \
+      -d true --order-by -opened_at -n 0 -o table
+
+# open, but nobody owns it
+snowq query problem -q "active=true^assigned_toISEMPTY" \
+      -f number,short_description,state,priority,opened_at \
+      -d true --order-by opened_at -o table
+
+# aging: open more than 90 days
+snowq query problem -q "active=true^opened_atRELATIVELE@day@ago@90" \
+      -f number,short_description,state,assignment_group,opened_at \
+      -d true --order-by opened_at -n 0 -o table
+```
+
+### Known errors and workarounds
+
+The part of problem management the service desk actually consumes:
+
+```sh
+snowq query problem -q "known_error=true^active=true" \
+      -f number,short_description,workaround,cmdb_ci,assignment_group \
+      -d true -n 0 -o table
+
+# known errors with no workaround written down — the gap that costs the desk time
+snowq query problem -q "known_error=true^active=true^workaroundISEMPTY" \
+      -f number,short_description,assigned_to,opened_at -d true -o table
+```
+
+### What a problem is actually costing
+
+Incidents point at their problem through `problem_id`, so "how many incidents
+did this cause" is a query against `incident`, not `problem`:
+
+```sh
+# incidents attached to one problem
+snowq query incident -q "problem_id.number=PRB0012345" \
+      -f number,short_description,state,opened_at -d true -n 0 -o table
+
+# the problems driving the most incidents, in one Aggregate call
+snowq raw /api/now/stats/incident \
+      -p "sysparm_query=problem_idISNOTEMPTY^opened_atRELATIVEGE@day@ago@90" \
+      -p sysparm_count=true \
+      -p sysparm_group_by=problem_id \
+      -p sysparm_display_value=true
+
+# the reverse: incidents that should probably have a problem and do not
+snowq count incident -q "problem_idISEMPTY^priority=1^opened_atRELATIVEGE@day@ago@90"
+```
+
+### Problem tasks
+
+RCA work is tracked on `problem_task`, a separate table:
+
+```sh
+snowq query problem_task -q "problem.number=PRB0012345" \
+      -f number,short_description,state,assigned_to,due_date -d true -o table
+
+# this group's outstanding problem tasks, soonest due first
+snowq query problem_task -q "assignment_group.name=$GROUP^active=true" \
+      -f number,problem,short_description,state,assigned_to,due_date \
+      -d true --order-by due_date -n 0 -o table
+```
+
+### Closing the loop into change
+
+A fix usually ships as a change, and `rfc` on the problem points at it:
+
+```sh
+snowq query problem -q "active=true^rfcISNOTEMPTY" \
+      -f number,short_description,state,rfc,assignment_group -d true -o table
+```
+
+Common, but not guaranteed: `known_error`, `workaround`, `rfc`, `problem_state`
+and `major_problem` ship with most instances, and some shops replace them with
+`u_` equivalents. Settle it before trusting a filter:
+
+```sh
+snowq query sys_dictionary -q "name=problem" -f element,column_label,internal_type -n 0 -o table
+```
 
 ## Server inventory
 

@@ -180,7 +180,9 @@ snowq raw /api/now/stats/incident \
 
 | Table | Holds |
 |---|---|
-| `incident` | Incidents |
+| `incident` | Incidents. Links to its problem through `problem_id` |
+| `problem` | Problems. Lifecycle is on `state` or `problem_state` depending on the version — check before filtering |
+| `problem_task` | RCA and fix tasks under a problem |
 | `change_request` | Changes |
 | `task_ci` | CIs affected by a task — `cmdb_ci` on the change is only the primary |
 | `cmdb_ci_server` | Servers |
