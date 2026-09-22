@@ -139,6 +139,14 @@ assignment group, backlog counts per team, server inventory, CMDB hygiene, CAB
 prep, emergency-change audits, and scheduled CSV exports via
 `examples/export.py`.
 
+## For coding agents
+
+`.claude/skills/snowq/SKILL.md` is a skill for LLM-driven use: encoded-query
+syntax, the flags that decide whether output is usable, exit-code handling, and
+the rule that matters most — discover field and choice values from the instance
+rather than guessing them, because a customised instance answers a wrong guess
+with an empty result rather than an error.
+
 ## As a library
 
 ```python
