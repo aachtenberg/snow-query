@@ -1,0 +1,151 @@
+#!/bin/sh
+# snowq — run the CLI straight from this checkout.
+#
+# Works with no install at all: it finds a Python that has `requests`, puts
+# src/ on the path, and hands over to `python -m snowq`. If you have synced a
+# venv it prefers that, so `login` and `import-browser` work too.
+#
+#   ./snowq doctor                      # what is and is not available here
+#   ./snowq -i acme import-cookie < cookie.txt
+#   ./snowq -i acme query incident -q 'active=true' -n 5 -o table
+
+set -eu
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$here"
+
+# ---------------------------------------------------------------- interpreter
+# Prefer the project venv (it may also carry playwright), but only take an
+# interpreter that can actually import requests — a half-synced venv is the
+# usual reason `python -m snowq` dies with "No module named snowq" instead.
+PY=""
+PY_WITHOUT_REQUESTS=""
+for candidate in \
+    ".venv/bin/python" \
+    ".venv/Scripts/python.exe" \
+    ".venv/Scripts/python" \
+    "python3" \
+    "python"
+do
+    case "$candidate" in
+        ./*|.venv/*) [ -x "$candidate" ] || continue ;;
+        *) command -v "$candidate" >/dev/null 2>&1 || continue ;;
+    esac
+    "$candidate" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' \
+        >/dev/null 2>&1 || continue
+    if "$candidate" -c 'import requests' >/dev/null 2>&1; then
+        PY=$candidate
+        break
+    fi
+    [ -n "$PY_WITHOUT_REQUESTS" ] || PY_WITHOUT_REQUESTS=$candidate
+done
+
+if [ -z "$PY" ]; then
+    echo "snowq: no Python 3.9+ with 'requests' installed." >&2
+    echo >&2
+    if [ -n "$PY_WITHOUT_REQUESTS" ]; then
+        echo "  Found $PY_WITHOUT_REQUESTS, but it cannot import requests." >&2
+    else
+        echo "  Found no usable python3 on PATH." >&2
+    fi
+    echo >&2
+    echo "  requests is the only hard dependency. Either:" >&2
+    echo "    uv sync --extra login            # if you can reach a package index" >&2
+    echo "    pip install requests             # or just this one package" >&2
+    echo >&2
+    echo "  If uv says 'requests was not found in the package registry', it" >&2
+    echo "  reached no index at all. See docs/install.md." >&2
+    exit 1
+fi
+
+# ------------------------------------------------------------------ pythonpath
+# Relative, so this survives Git Bash on Windows, where a native python.exe
+# does not understand an MSYS /c/... path.
+case "$(uname -s 2>/dev/null || echo unknown)" in
+    MINGW*|MSYS*|CYGWIN*) sep=";" ;;
+    *) sep=":" ;;
+esac
+if [ -n "${PYTHONPATH:-}" ]; then
+    PYTHONPATH="src${sep}${PYTHONPATH}"
+else
+    PYTHONPATH="src"
+fi
+export PYTHONPATH
+
+# --------------------------------------------------------------- subcommand
+# Find the first bare word that is not an option or an option's value.
+cmd=""
+skip=0
+for arg in "$@"; do
+    if [ "$skip" = 1 ]; then
+        skip=0
+        continue
+    fi
+    case "$arg" in
+        -i|--instance) skip=1 ;;
+        -*) ;;
+        *) cmd=$arg; break ;;
+    esac
+done
+
+has_module() { "$PY" -c "import $1" >/dev/null 2>&1; }
+
+if [ "$cmd" = "doctor" ]; then
+    printf 'python      %s\n' "$("$PY" -c 'import sys; print(sys.executable or "?")')"
+    printf 'version     %s\n' "$("$PY" -c 'import sys; print("%d.%d.%d" % sys.version_info[:3])')"
+    printf 'PYTHONPATH  %s\n' "$PYTHONPATH"
+    printf '\n'
+    for mod in requests playwright browser_cookie3; do
+        if has_module "$mod"; then
+            printf '  yes  %s\n' "$mod"
+        else
+            printf '  no   %s\n' "$mod"
+        fi
+    done
+    printf '\n'
+    if has_module snowq; then
+        printf 'snowq imports cleanly.\n'
+    else
+        printf 'snowq does NOT import — is src/snowq/ present?\n'
+        exit 1
+    fi
+    sessions="$HOME/.config/snowq/sessions"
+    if [ -d "$sessions" ] && [ -n "$(ls -A "$sessions" 2>/dev/null)" ]; then
+        printf '\nsaved sessions:\n'
+        for f in "$sessions"/*.session.json; do
+            [ -e "$f" ] || continue
+            printf '  %s\n' "$(basename "$f" .session.json)"
+        done
+    else
+        printf '\nNo saved session yet. Get one with:\n'
+        if has_module playwright; then
+            printf '  ./snowq -i <instance> login\n'
+        else
+            printf '  ./snowq -i <instance> import-cookie < cookie.txt\n'
+            printf '  (login needs playwright, which is not installed here)\n'
+        fi
+    fi
+    exit 0
+fi
+
+# login and import-browser need optional extras; say so before argparse does,
+# and point at the fallback that needs nothing.
+if [ "$cmd" = "login" ] && ! has_module playwright; then
+    echo "snowq: 'login' needs Playwright, which is not installed here." >&2
+    echo >&2
+    echo "  Install it:   uv sync --extra login && uv run --extra login playwright install chromium" >&2
+    echo "  Or skip it:   ./snowq -i <instance> import-cookie < cookie.txt" >&2
+    echo >&2
+    echo "  import-cookie needs no extras. docs/sessions.md has the devtools steps." >&2
+    exit 1
+fi
+
+if [ "$cmd" = "import-browser" ] && ! has_module browser_cookie3; then
+    echo "snowq: 'import-browser' needs browser-cookie3, which is not installed here." >&2
+    echo >&2
+    echo "  Install it:   uv sync --extra browser" >&2
+    echo "  Or skip it:   ./snowq -i <instance> import-cookie < cookie.txt" >&2
+    exit 1
+fi
+
+exec "$PY" -m snowq "$@"

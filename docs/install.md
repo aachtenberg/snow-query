@@ -108,12 +108,22 @@ You do not need uv, a virtualenv, or an install. `requests` is the only hard
 dependency, and corporate Python builds usually already have it — check with
 `python -c "import requests"`. If that works, run straight from the checkout:
 
+The `./snowq` wrapper at the repo root does this for you — it picks an
+interpreter that has `requests`, sets the path, and reports what is missing:
+
 ```sh
 cd snow-query
+./snowq doctor
+./snowq -i acme import-cookie < cookie.txt
+./snowq -i acme query incident -q 'active=true' -n 5
+```
+
+It is POSIX `sh`, so on Windows run it from Git Bash. By hand it is:
+
+```sh
 export PYTHONPATH=src        # src-layout; without this you get "No module named snowq"
 python -m snowq -i acme import-cookie   # paste the Cookie header, then Ctrl-D (Ctrl-Z on Windows)
 python -m snowq -i acme whoami
-python -m snowq -i acme query incident -q 'active=true' -n 5
 ```
 
 In PowerShell that export is `$env:PYTHONPATH = "src"`.

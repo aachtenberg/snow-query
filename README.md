@@ -40,7 +40,7 @@ Behind Artifactory or another private index, see
 **[docs/install.md](docs/install.md)** — uv ignores `pip.conf`, which is the usual
 reason a working pip and a failing `uv sync` sit side by side.
 
-### If `uv sync` fails, skip the install
+### If `uv sync` fails, use `./snowq`
 
 ```
 error: No solution found when resolving dependencies
@@ -48,24 +48,33 @@ error: No solution found when resolving dependencies
 ```
 
 That means uv reached no index at all, not that the version pin is wrong —
-`requests` is on every mirror. You do not need uv, a virtualenv, or an install to
-use snowq: `requests` is the only hard dependency, and corporate Python builds
-usually already have it.
+`requests` is on every mirror. You do not need uv, a virtualenv, or an install:
+`requests` is the only hard dependency, and corporate Python builds usually
+already have it. The `./snowq` wrapper in this repo finds a Python that has it,
+puts `src/` on the path, and runs the CLI straight from the checkout:
 
 ```sh
-cd snow-query
-export PYTHONPATH=src        # src-layout; without this you get "No module named snowq"
-python -m snowq -i acme import-cookie < cookie.txt
-python -m snowq -i acme whoami
+./snowq doctor                                    # what is available here
+./snowq -i acme import-cookie < cookie.txt
+./snowq -i acme whoami
+./snowq -i acme query incident -q 'active=true' -n 5 -o table
 ```
 
-In PowerShell that export is `$env:PYTHONPATH = "src"`.
+`doctor` prints which interpreter it picked, which optional extras are present,
+and whether you have a saved session. The wrapper prefers a synced `.venv` when
+there is one, so the same command keeps working after a successful install.
 
-Use `import-cookie` here, not `login` — `login` drives Playwright, which is the
-thing you could not install. See
-[docs/sessions.md](docs/sessions.md#capturing-the-cookie-header) for how to copy
-`cookie.txt` out of devtools, and [docs/install.md](docs/install.md) for pointing
-uv at your real index once you want the full install.
+On a blocked index reach for `import-cookie`, not `login` — `login` drives
+Playwright, which is the thing that would not install. The wrapper says so up
+front instead of failing deep inside the login flow.
+[docs/sessions.md](docs/sessions.md#capturing-the-cookie-header) has the devtools
+steps for `cookie.txt`; [docs/install.md](docs/install.md) covers pointing uv at
+your real index.
+
+The wrapper is POSIX `sh`, so on Windows run it from Git Bash. Without it, the
+equivalent is `export PYTHONPATH=src` (`$env:PYTHONPATH = "src"` in PowerShell)
+followed by `python -m snowq ...` — skipping that export is what produces
+`No module named snowq`.
 
 ## Getting a session
 
