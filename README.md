@@ -38,8 +38,34 @@ playwright ...` without `--extra login` uninstalls Playwright and then fails.
 
 Behind Artifactory or another private index, see
 **[docs/install.md](docs/install.md)** — uv ignores `pip.conf`, which is the usual
-reason a working pip and a failing `uv sync` sit side by side. It also covers
-running with no install at all, which needs nothing but `requests`.
+reason a working pip and a failing `uv sync` sit side by side.
+
+### If `uv sync` fails, skip the install
+
+```
+error: No solution found when resolving dependencies
+  cause: Because requests was not found in the package registry ...
+```
+
+That means uv reached no index at all, not that the version pin is wrong —
+`requests` is on every mirror. You do not need uv, a virtualenv, or an install to
+use snowq: `requests` is the only hard dependency, and corporate Python builds
+usually already have it.
+
+```sh
+cd snow-query
+export PYTHONPATH=src        # src-layout; without this you get "No module named snowq"
+python -m snowq -i acme import-cookie < cookie.txt
+python -m snowq -i acme whoami
+```
+
+In PowerShell that export is `$env:PYTHONPATH = "src"`.
+
+Use `import-cookie` here, not `login` — `login` drives Playwright, which is the
+thing you could not install. See
+[docs/sessions.md](docs/sessions.md#capturing-the-cookie-header) for how to copy
+`cookie.txt` out of devtools, and [docs/install.md](docs/install.md) for pointing
+uv at your real index once you want the full install.
 
 ## Getting a session
 

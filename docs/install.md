@@ -110,7 +110,7 @@ dependency, and corporate Python builds usually already have it — check with
 
 ```sh
 cd snow-query
-export PYTHONPATH=src        # this is a src-layout, so the package is not importable without it
+export PYTHONPATH=src        # src-layout; without this you get "No module named snowq"
 python -m snowq -i acme import-cookie   # paste the Cookie header, then Ctrl-D (Ctrl-Z on Windows)
 python -m snowq -i acme whoami
 python -m snowq -i acme query incident -q 'active=true' -n 5
