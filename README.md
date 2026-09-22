@@ -1,5 +1,7 @@
 # snowq
 
+[![CI](https://github.com/aachtenberg/snow-query/actions/workflows/ci.yml/badge.svg)](https://github.com/aachtenberg/snow-query/actions/workflows/ci.yml)
+
 Query ServiceNow's REST APIs from Python by reusing the session you get from
 logging in through SSO in a browser. No API user, OAuth client, or password.
 

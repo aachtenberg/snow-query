@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        # The floor declared in pyproject.toml, and the current release.
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      # Also runs util/gen_agent_docs.py --check, so a hand-edited copy of the
+      # agent instructions fails here rather than going unnoticed.
+      - run: uv run pytest -q
+
+  wrappers:
+    name: wrapper (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Create the venv the wrapper should prefer
+        run: uv sync
+
+      - name: ./snowq
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          ./snowq doctor
+          # exit 3 is "parsed, imported, no saved session" — the whole chain
+          # works without an instance to talk to.
+          ./snowq -i acme whoami && rc=0 || rc=$?
+          test "$rc" = 3 || { echo "expected exit 3, got $rc"; exit 1; }
+
+      - name: snowq.cmd
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call snowq.cmd doctor || exit /b 1
+          call snowq.cmd -i acme whoami
+          if not "%ERRORLEVEL%"=="3" (echo expected exit 3, got %ERRORLEVEL% & exit /b 1)
+
+      - name: snowq.cmd from PowerShell
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .\snowq.cmd doctor
+          if ($LASTEXITCODE -ne 0) { throw "doctor exited $LASTEXITCODE" }
+          .\snowq.cmd -i acme whoami
+          if ($LASTEXITCODE -ne 3) { throw "expected exit 3, got $LASTEXITCODE" }
