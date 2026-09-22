@@ -22,7 +22,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "AGENTS.md"
-START, END = "<!-- core:start -->", "<!-- core:end -->"
+CORE = ("<!-- core:start -->", "<!-- core:end -->")
+DEV = ("<!-- dev:start -->", "<!-- dev:end -->")
 
 GENERATED = "<!-- Generated from AGENTS.md by util/gen_agent_docs.py — edit that, not this. -->"
 
@@ -32,33 +33,40 @@ POINTER = (
     "[docs/recipes.md](docs/recipes.md) has worked examples.\n"
 )
 
-# path -> header placed above the shared core block
-TARGETS: dict[str, str] = {
+# path -> (header above the shared core block, gets the "working on this
+# repository" rules). The skill is guidance for USING snowq, so it does not.
+TARGETS: dict[str, tuple[str, bool]] = {
+    # path -> (header above the shared core block, include the "working on this
+    # repository" rules). Every file an assistant loads for the REPO gets them;
+    # the skill is guidance for USING snowq, so it does not.
+    #
     # Cross-tool default, and what Claude Code reads for the repo.
-    "CLAUDE.md": "# snowq\n\n{generated}\n\n",
+    "CLAUDE.md": ("# snowq\n\n{generated}\n\n", True),
     # GitHub Copilot, in VS Code and JetBrains.
-    ".github/copilot-instructions.md": "# snowq — Copilot instructions\n\n{generated}\n\n",
+    ".github/copilot-instructions.md": ("# snowq — Copilot instructions\n\n{generated}\n\n", True),
     # Cursor. Project rules live in .cursor/rules/*.mdc with frontmatter.
     ".cursor/rules/snowq.mdc": (
         "---\n"
         "description: Querying ServiceNow with the snowq CLI\n"
         "alwaysApply: true\n"
         "---\n\n"
-        "{generated}\n\n"
+        "{generated}\n\n",
+        True,
     ),
     # Windsurf.
-    ".windsurfrules": "# snowq\n\n{generated}\n\n",
+    ".windsurfrules": ("# snowq\n\n{generated}\n\n", True),
     # Cline.
-    ".clinerules": "# snowq\n\n{generated}\n\n",
+    ".clinerules": ("# snowq\n\n{generated}\n\n", True),
     # Continue.
     ".continue/rules/snowq.md": (
         "---\n"
         "name: snowq\n"
         "description: Querying ServiceNow with the snowq CLI\n"
         "---\n\n"
-        "{generated}\n\n"
+        "{generated}\n\n",
+        True,
     ),
-    # Claude Code skill: discovered by its frontmatter description.
+    # Claude Code skill: discovered by its frontmatter description. Usage only.
     ".claude/skills/snowq/SKILL.md": (
         "---\n"
         "name: snowq\n"
@@ -67,35 +75,48 @@ TARGETS: dict[str, str] = {
         "sys_user_group. Use when asked to pull ServiceNow data, write or fix an encoded query, "
         "find which field or choice value an instance uses, or export records to CSV.\n"
         "---\n\n"
-        "# Querying ServiceNow with snowq\n\n"
-        "{generated}\n\n"
+        "# Querying ServiceNow with snowq\n\n",
+        False,
     ),
 }
 
 
-def core_block() -> str:
+def block(markers: tuple[str, str]) -> str:
+    start, end = markers
     text = SOURCE.read_text(encoding="utf-8")
     try:
-        body = text.split(START, 1)[1].split(END, 1)[0]
+        body = text.split(start, 1)[1].split(end, 1)[0]
     except IndexError:
-        raise SystemExit(f"{SOURCE.name}: missing {START} / {END} markers")
+        raise SystemExit(f"{SOURCE.name}: missing {start} / {end} markers")
     return body.strip() + "\n"
 
 
-def render(header: str, core: str) -> str:
+def core_block() -> str:
+    return block(CORE)
+
+
+def dev_block() -> str:
+    return block(DEV)
+
+
+def render(header: str, core: str, dev: str | None) -> str:
     # A pointer relative to the repo root works from a nested file too, because
     # every assistant resolves these against the workspace root.
-    return header.format(generated=GENERATED) + core + "\n" + POINTER
+    body = header.format(generated=GENERATED) + core
+    if dev:
+        body += "\n" + dev
+    return body + "\n" + POINTER
 
 
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     core = core_block()
+    dev = dev_block()
     stale: list[str] = []
 
-    for rel, header in TARGETS.items():
+    for rel, (header, include_dev) in TARGETS.items():
         path = ROOT / rel
-        want = render(header, core)
+        want = render(header, core, dev if include_dev else None)
         have = path.read_text(encoding="utf-8") if path.exists() else None
         if have == want:
             continue

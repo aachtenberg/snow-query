@@ -5,8 +5,6 @@ description: Query ServiceNow from the command line with snowq — encoded-query
 
 # Querying ServiceNow with snowq
 
-<!-- Generated from AGENTS.md by util/gen_agent_docs.py — edit that, not this. -->
-
 ## Non-negotiables
 
 **Never guess a field name or a choice value.** A ServiceNow instance is

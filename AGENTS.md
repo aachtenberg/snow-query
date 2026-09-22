@@ -53,6 +53,26 @@ from the checkout with no install. Bare `snowq` only exists on PATH after a
 successful install; `python -m snowq` needs `PYTHONPATH=src`.
 <!-- core:end -->
 
+<!-- dev:start -->
+## Working on this repository
+
+- `uv run pytest` runs everything, including the check that the per-tool agent
+  files still match this one.
+- **CLAUDE.md, `.clinerules`, `.windsurfrules`, `.cursor/rules/`,
+  `.continue/rules/` and `.claude/skills/snowq/SKILL.md` are generated.** Edit
+  **AGENTS.md**, then run `python util/gen_agent_docs.py`. Hand-editing a
+  generated file fails CI — the file you are reading may be one of them.
+- The CLI is in `src/snowq/`. `./snowq` (POSIX/Git Bash) and `snowq.cmd`
+  (Windows) run it from the checkout with no install; CI exercises both on
+  Linux, macOS and Windows.
+- **Name `encoding="utf-8"` on every text read and write.** These docs carry em
+  dashes, and the Windows runner defaults to cp1252, which mangles them
+  silently. `python -X warn_default_encoding -W error::EncodingWarning` finds
+  the omissions.
+- Keep instance names, group names, people and CI names out of committed files.
+  Use shell variables the reader substitutes, as `docs/recipes.md` does.
+<!-- dev:end -->
+
 ## Detail
 
 snowq is read-only and runs as the signed-in user, reusing an SSO browser

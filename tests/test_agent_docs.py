@@ -40,7 +40,46 @@ def test_the_rule_that_matters_reaches_every_tool():
         assert "read-only" in text, rel
 
 
-def test_core_markers_still_delimit_a_block():
-    core = gen.core_block()
+# Listed literally, NOT read from gen.TARGETS: a test that reads the same
+# config it is checking passes when someone flips the flag off, which is the
+# regression it exists to catch.
+REPO_ASSISTANT_FILES = (
+    "CLAUDE.md",
+    ".github/copilot-instructions.md",
+    ".cursor/rules/snowq.mdc",
+    ".windsurfrules",
+    ".clinerules",
+    ".continue/rules/snowq.md",
+)
+USAGE_ONLY_FILES = (".claude/skills/snowq/SKILL.md",)
+
+
+def test_repo_assistants_learn_the_files_are_generated():
+    # The trap this closes: an agent asked to change the agent instructions
+    # opens the file it was loaded with, edits it, and CI fails with no hint.
+    # Every file an assistant loads for the repo must say to edit AGENTS.md.
+    for rel in REPO_ASSISTANT_FILES:
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        assert "are generated" in text, rel
+        assert "util/gen_agent_docs.py" in text, rel
+        assert "uv run pytest" in text, rel
+
+
+def test_the_usage_skill_carries_no_repo_chores():
+    for rel in USAGE_ONLY_FILES:
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        assert "Working on this repository" not in text, rel
+
+
+def test_the_two_file_lists_cover_every_target():
+    assert set(REPO_ASSISTANT_FILES) | set(USAGE_ONLY_FILES) == set(gen.TARGETS)
+
+
+def test_markers_still_delimit_their_blocks():
+    core, dev = gen.core_block(), gen.dev_block()
     assert "Never guess a field name" in core
-    assert gen.START not in core and gen.END not in core
+    assert "Working on this repository" in dev
+    # neither block may swallow the other, or the split stops meaning anything
+    assert "Working on this repository" not in core
+    for marker in (*gen.CORE, *gen.DEV):
+        assert marker not in core and marker not in dev
