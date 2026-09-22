@@ -5,6 +5,11 @@
 Query ServiceNow's REST APIs from Python by reusing the session you get from
 logging in through SSO in a browser. No API user, OAuth client, or password.
 
+For the situation where you can read the records perfectly well in the
+ServiceNow UI but cannot get at them any other way: no integration user, no
+OAuth client approved, and a service-account request measured in weeks. snowq
+reads the same records the web UI already shows you, over the same session.
+
 ```sh
 uv sync --extra login
 uv run playwright install chromium   # skip with --channel chrome / msedge
@@ -13,8 +18,12 @@ snowq -i acme login                  # finish SSO in the browser that opens
 snowq -i acme query incident -q "active=true^priority=1" -n 10 -o table
 ```
 
-Everything runs as **you**, with your roles and ACLs. Treat the saved session like
-a password.
+**It is read-only and runs as you**, with your own roles and ACLs: it sees
+exactly what you see in the UI, and it cannot create, update or delete anything.
+That is the point — it automates the access you already have rather than
+granting new access. For unattended or shared automation, ask your ServiceNow
+team for a service account instead; [docs/recipes.md](docs/recipes.md) says
+where that line falls. Treat the saved session like a password.
 
 ## How it works
 
