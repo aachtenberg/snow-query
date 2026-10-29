@@ -107,7 +107,9 @@ class SnowClient:
 
     # --- requests ---------------------------------------------------------------
 
-    def request(self, method: str, path: str, **kw) -> requests.Response:
+    def request(
+        self, method: str, path: str, *, expect_json: bool = True, allow_html: bool = False, **kw
+    ) -> requests.Response:
         if not self.g_ck:
             self.refresh_token()
         url = path if path.startswith("http") else self.base + path
@@ -132,10 +134,17 @@ class SnowClient:
                 continue
             if r.status_code == 401:
                 raise SessionExpired("401 Unauthorized; the SSO session has expired")
-            if "json" not in r.headers.get("Content-Type", ""):
-                raise SessionExpired(
-                    f"expected JSON from {path}, got {r.headers.get('Content-Type')!r} — "
-                    "probably a login page"
+            ctype = r.headers.get("Content-Type", "")
+            # A dead session answers 200 with the login page, so HTML is the tell.
+            # Anything else that is not JSON is a real body (a file, say), not a
+            # login page, and reporting it as an expired session sends people to
+            # re-authenticate for nothing.
+            if (not ctype or "text/html" in ctype) and not allow_html:
+                raise SessionExpired(f"expected {'JSON' if expect_json else 'a file'} from {path}, got {ctype!r} — probably a login page")
+            if expect_json and "json" not in ctype:
+                raise RuntimeError(
+                    f"expected JSON from {path}, got {ctype!r}; "
+                    "for attachment content use `snowq attachment <sys_id>`"
                 )
             if not r.ok:
                 raise RuntimeError(f"{method} {path} -> {r.status_code}: {_error_message(r)}")
@@ -196,6 +205,25 @@ class SnowClient:
             params["sysparm_query"] = query
         result = self.get_json(f"/api/now/stats/{table}", params)["result"]
         return int(result["stats"]["count"])
+
+    def attachment(self, sys_id: str) -> dict:
+        """Metadata for one attachment: file_name, content_type, size_bytes, table_name, ..."""
+        return self.get_json(f"/api/now/attachment/{sys_id}")["result"]
+
+    def attachment_content(self, sys_id: str, allow_html: bool = False) -> requests.Response:
+        """Stream one attachment's bytes.
+
+        An HTML body is normally a login page; pass ``allow_html`` when the
+        attachment's own metadata says it is HTML.
+        """
+        return self.request(
+            "GET",
+            f"/api/now/attachment/{sys_id}/file",
+            expect_json=False,
+            allow_html=allow_html,
+            headers={"Accept": "*/*"},
+            stream=True,
+        )
 
     def whoami(self) -> dict:
         rows = list(

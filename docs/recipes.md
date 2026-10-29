@@ -286,6 +286,50 @@ snowq query change_request -q "close_codeNOT LIKEsuccessful^stateIN3,4^sys_creat
 snowq count change_request -q "type=emergency^sys_created_onRELATIVEGE@day@ago@30"
 ```
 
+### Attachments on a change
+
+Implementation plans, test evidence and sign-off emails usually arrive as
+attachments rather than fields. They live in `sys_attachment`, keyed by
+`table_name` and `table_sys_id`. `table_sys_id` is a plain string, not a
+reference, so you can't dot-walk to the change number. Look up the sys_id first:
+
+```sh
+CHG_SYS_ID=$(snowq query change_request -q "number=CHG0031234" -f sys_id -o csv | tail -n 1)
+
+snowq query sys_attachment -q "table_name=change_request^table_sys_id=$CHG_SYS_ID" \
+      -f file_name,content_type,size_bytes,sys_created_by,sys_created_on \
+      --order-by sys_created_on -n 0 -o table
+```
+
+To see which changes carry any attachments at all, for example when an auditor asks
+whether evidence was filed, count them per change in one Aggregate call. A change
+that does not appear has no attachments you can see:
+
+```sh
+snowq raw /api/now/stats/sys_attachment \
+      -p "sysparm_query=table_name=change_request^sys_created_onRELATIVEGE@day@ago@30" \
+      -p sysparm_count=true \
+      -p sysparm_group_by=table_sys_id
+```
+
+Download them with `snowq attachment`, which takes the attachment's own sys_id
+(not the change's) and saves each file under its uploaded name. Pass several
+sys_ids to fetch a change's whole evidence pack in one go:
+
+```sh
+mkdir -p evidence
+snowq query sys_attachment -q "table_name=change_request^table_sys_id=$CHG_SYS_ID" \
+      -f sys_id -n 0 -o csv | tail -n +2 | xargs snowq attachment -o evidence
+```
+
+It never overwrites a file that is already there unless you pass `--force`. Two
+attachments with the same name stop the run at the second one, so give those a
+fresh directory. `-o -` writes one attachment to stdout. `snowq raw` is for JSON
+endpoints only and refuses an attachment's `/file` path.
+
+Attachment visibility follows the parent record's ACLs, and some instances restrict
+attachments further, so an empty list carries the same caveat as any other query.
+
 ## Tying changes to infrastructure
 
 ```sh

@@ -116,6 +116,7 @@ snowq query change_request -q "start_date>=javascript:gs.beginningOfToday()" -n 
 snowq get incident 9d385017c611228701d22104cc95c371 -d all
 snowq count incident -q "active=true"
 snowq raw /api/now/table/sys_user_group -p sysparm_limit=5 -p sysparm_fields=name
+snowq attachment 0f1e2d3c4b5a69788796a5b4c3d2e1f0 -o ./evidence
 snowq logout
 ```
 

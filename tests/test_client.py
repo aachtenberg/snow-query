@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import stat
@@ -29,7 +30,8 @@ class FakeAdapter(BaseAdapter):
         r = requests.Response()
         r.status_code = status
         r.headers.update(headers)
-        r._content = body.encode() if isinstance(body, str) else json.dumps(body).encode()
+        # a raw stream, not a preset body, so iter_content works as it does on the wire
+        r.raw = io.BytesIO(body.encode() if isinstance(body, str) else json.dumps(body).encode())
         r.url = request.url
         r.request = request
         return r
@@ -287,3 +289,67 @@ def test_csv_list_tolerates_spaces_when_quoted():
         "short_description",
         "state",
     ]
+
+
+PDF = {"Content-Type": "application/pdf"}
+
+
+def attachment_handler(file_name="plan.pdf", content_type="application/pdf", body="%PDF-1.7 bytes"):
+    def handler(method, path, params, headers):
+        if path.endswith("/file"):
+            assert headers["Accept"] == "*/*"
+            return 200, {"Content-Type": content_type}, body
+        return 200, JSON, {"result": {"file_name": file_name, "content_type": content_type, "size_bytes": "14"}}
+
+    return handler
+
+
+def test_non_json_body_is_not_reported_as_an_expired_session():
+    client, _ = make_client(lambda *a: (200, PDF, "%PDF"), g_ck="t" * 32)
+    with pytest.raises(RuntimeError) as e:
+        client.get_json("/api/now/attachment/abc/file")
+    assert not isinstance(e.value, SessionExpired)
+    assert "snowq attachment" in str(e.value)
+
+
+def test_download_saves_under_the_attachment_name(tmp_path):
+    client, _ = make_client(attachment_handler(), g_ck="t" * 32)
+    cli._download(client, ["abc"], str(tmp_path), force=False)
+    assert (tmp_path / "plan.pdf").read_bytes() == b"%PDF-1.7 bytes"
+    assert not list(tmp_path.glob("*.part"))
+
+
+def test_download_strips_paths_from_the_uploaded_name(tmp_path):
+    client, _ = make_client(attachment_handler(file_name="..\\..\\evil.bat"), g_ck="t" * 32)
+    cli._download(client, ["abc"], str(tmp_path), force=False)
+    assert [p.name for p in tmp_path.iterdir()] == ["evil.bat"]
+    assert cli._safe_name("../", "abc") == "abc"
+
+
+def test_download_refuses_to_overwrite_without_force(tmp_path):
+    (tmp_path / "plan.pdf").write_bytes(b"mine")
+    client, _ = make_client(attachment_handler(), g_ck="t" * 32)
+    with pytest.raises(RuntimeError, match="--force"):
+        cli._download(client, ["abc"], str(tmp_path), force=False)
+    assert (tmp_path / "plan.pdf").read_bytes() == b"mine"
+    cli._download(client, ["abc"], str(tmp_path), force=True)
+    assert (tmp_path / "plan.pdf").read_bytes() == b"%PDF-1.7 bytes"
+
+
+def test_download_of_a_login_page_is_session_expired(tmp_path):
+    client, _ = make_client(attachment_handler(content_type="text/html", body="<html>login</html>"), g_ck="t" * 32)
+    client.attachment = lambda sys_id: {"file_name": "plan.pdf", "content_type": "application/pdf"}
+    with pytest.raises(SessionExpired):
+        cli._download(client, ["abc"], str(tmp_path), force=False)
+
+
+def test_download_of_an_html_attachment_is_allowed(tmp_path):
+    client, _ = make_client(attachment_handler(file_name="notes.html", content_type="text/html", body="<p>hi</p>"), g_ck="t" * 32)
+    cli._download(client, ["abc"], str(tmp_path), force=False)
+    assert (tmp_path / "notes.html").read_text(encoding="utf-8") == "<p>hi</p>"
+
+
+def test_several_attachments_need_a_directory(tmp_path):
+    client, _ = make_client(attachment_handler(), g_ck="t" * 32)
+    with pytest.raises(ValueError, match="directory"):
+        cli._download(client, ["a", "b"], str(tmp_path / "out.pdf"), force=False)

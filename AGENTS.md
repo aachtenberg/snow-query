@@ -151,7 +151,8 @@ snowq whoami
 snowq query <table> -q "<encoded query>" -f <fields> -d true -n 0 -o table
 snowq get <table> <sys_id> -d all          # by sys_id, NOT by number
 snowq count <table> -q "<encoded query>"   # volume without pulling records
-snowq raw /api/now/... -p key=value        # any REST path
+snowq attachment <sys_id>... -o <dir>      # download attachments (sys_ids from sys_attachment)
+snowq raw /api/now/... -p key=value        # any REST path; JSON only
 snowq logout
 ```
 
@@ -185,6 +186,7 @@ snowq raw /api/now/stats/incident \
 | `problem_task` | RCA and fix tasks under a problem |
 | `change_request` | Changes |
 | `task_ci` | CIs affected by a task — `cmdb_ci` on the change is only the primary |
+| `sys_attachment` | Attachments on any record, by `table_name` + `table_sys_id` (a string, not dot-walkable). Download with `snowq attachment`, not `raw` |
 | `cmdb_ci_server` | Servers |
 | `sys_user_group` | Groups |
 | `sys_user_grmember` | Group membership |

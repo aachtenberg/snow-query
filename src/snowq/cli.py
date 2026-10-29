@@ -11,6 +11,7 @@ import argparse
 import csv
 import json
 import os
+import re
 import shutil
 import sys
 
@@ -69,6 +70,14 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("count", help="count records matching a query (Aggregate API)")
     s.add_argument("table")
     s.add_argument("-q", "--query")
+
+    s = sub.add_parser("attachment", help="download attachments by sys_id (list them from sys_attachment)")
+    s.add_argument("sys_id", nargs="+")
+    s.add_argument(
+        "-o", "--output", default=".",
+        help="directory to save into (default: here), a file name for one attachment, or - for stdout",
+    )
+    s.add_argument("--force", action="store_true", help="overwrite files that already exist")
 
     s = sub.add_parser("raw", help="GET any REST path, e.g. /api/now/table/sys_user?sysparm_limit=1")
     s.add_argument("path")
@@ -172,9 +181,47 @@ def _dispatch(client: SnowClient, args) -> None:
         )
     elif args.cmd == "count":
         print(client.count(args.table, args.query))
+    elif args.cmd == "attachment":
+        _download(client, args.sys_id, args.output, args.force)
     elif args.cmd == "raw":
         params = dict(p.split("=", 1) for p in args.param)
         _emit_json(client.get_json(args.path, params or None))
+
+
+def _safe_name(file_name: str, fallback: str) -> str:
+    """The attachment's own name, minus any path — it comes from whoever uploaded it."""
+    name = re.split(r"[\\/]", file_name or "")[-1].strip()
+    return fallback if name in ("", ".", "..") else name
+
+
+def _download(client: SnowClient, sys_ids: list[str], output: str, force: bool) -> None:
+    into_dir = os.path.isdir(output)
+    if len(sys_ids) > 1 and not into_dir:
+        raise ValueError(f"-o {output!r} is not an existing directory; several attachments need one")
+    for sys_id in sys_ids:
+        meta = client.attachment(sys_id)
+        ctype = meta.get("content_type") or ""
+        r = client.attachment_content(sys_id, allow_html="html" in ctype)
+        if output == "-":
+            for chunk in r.iter_content(64 * 1024):
+                sys.stdout.buffer.write(chunk)
+            sys.stdout.buffer.flush()
+            continue
+        path = os.path.join(output, _safe_name(meta.get("file_name"), sys_id)) if into_dir else output
+        if os.path.exists(path) and not force:
+            raise RuntimeError(f"{path} already exists; pass --force to overwrite or -o another directory")
+        # Write beside the target and rename, so an interrupted download leaves no half file.
+        part = path + ".part"
+        try:
+            with open(part, "wb") as f:
+                for chunk in r.iter_content(64 * 1024):
+                    f.write(chunk)
+            os.replace(part, path)
+        except BaseException:
+            if os.path.exists(part):
+                os.remove(part)
+            raise
+        print(f"{path}  ({meta.get('size_bytes', '?')} bytes, {ctype or 'unknown type'})", file=sys.stderr)
 
 
 def _emit_json(obj) -> None:
