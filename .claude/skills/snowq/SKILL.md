@@ -19,6 +19,11 @@ snowq query sys_dictionary -q "name=incident^elementSTARTSWITHu_" -f element,col
 snowq query sys_choice -q "name=incident^element=state" -f value,label -n 0 -o table
 ```
 
+No `sys_choice` rows does not mean no choices: a field inherited from `task`
+(`impact`, `urgency` on incident) keeps them on `task` unless the child table
+overrides them. Ask for `nameINincident,task` and use the incident rows if
+there are any.
+
 **`-q` takes an encoded query, not SQL.** `^` is AND, `^OR` is OR, `LIKE`,
 `STARTSWITH`, `IN` (no spaces), `ISEMPTY`, `RELATIVEGE@day@ago@30`. Dot-walk to
 reference fields: `assignment_group.name=Database Platform`.

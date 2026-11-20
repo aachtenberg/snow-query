@@ -133,7 +133,7 @@ fi
 if [ "$cmd" = "login" ] && ! has_module playwright; then
     echo "snowq: 'login' needs Playwright, which is not installed here." >&2
     echo >&2
-    echo "  Install it:   uv sync --extra login && uv run --extra login playwright install chromium" >&2
+    echo "  Install it:   python3 util/setup.py" >&2
     echo "  Or skip it:   ./snowq -i <instance> import-cookie < cookie.txt" >&2
     echo >&2
     echo "  import-cookie needs no extras. docs/sessions.md has the devtools steps." >&2

@@ -93,6 +93,10 @@ uv --native-tls sync --extra login   # TLS interception: use the OS trust store
 uv run --no-sync --extra login playwright install chromium  # skip re-resolution once synced
 ```
 
+`util/setup.py` runs these same uv commands, so it reads the same `UV_*` variables:
+once `uv sync` works by hand, `python3 util/setup.py` works too. Pass it
+`--no-browser` when the Chromium download is what fails.
+
 If the mirror does not carry a Playwright new enough for `playwright>=1.44`, loosen
 the pin in `pyproject.toml` to whatever it does carry, or skip Playwright's browser
 download entirely and drive an installed browser with
