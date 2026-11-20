@@ -27,27 +27,6 @@
      },
      "path": "/api/now/stats/incident",
      "status": 200
-    },
-    {
-     "body": {
-      "result": [
-       {
-        "sys_id": "b769f62383a41310403efcb6feaad363"
-       }
-      ]
-     },
-     "content_type": "application/json;charset=UTF-8",
-     "method": "GET",
-     "params": {
-      "sysparm_display_value": "false",
-      "sysparm_exclude_reference_link": "true",
-      "sysparm_fields": "sys_id",
-      "sysparm_limit": "1",
-      "sysparm_offset": "0",
-      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^ORDERBYcorrelation_id"
-     },
-     "path": "/api/now/table/incident",
-     "status": 200
     }
    ]
   },

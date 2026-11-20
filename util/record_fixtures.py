@@ -102,9 +102,12 @@ def record(client: SnowClient, recorder: Recorder) -> dict:
     scenarios: dict[str, dict] = {}
     for name, (method, kwargs) in SCENARIOS.items():
         kwargs = dict(kwargs)
+        # The previous scenario keeps the list it was recorded into; start a
+        # new one before any request, the sys_id lookup included.
+        recorder.exchanges = []
         if name == "one_record_all":
             kwargs["sys_id"] = _first_seeded_sys_id(client)
-        recorder.exchanges = []
+            recorder.exchanges = []  # the lookup is not part of this scenario
         result = getattr(client, method)(**kwargs)
         if method == "table":
             result = list(result)

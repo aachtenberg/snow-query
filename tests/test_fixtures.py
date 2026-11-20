@@ -139,6 +139,15 @@ def test_seeded_rows_render(fmt, capsys):
         assert "Resolved – " in out
 
 
+def test_each_scenario_holds_only_its_own_requests():
+    paths = {"table": "/api/now/table/{table}", "count": "/api/now/stats/{table}",
+             "get_record": "/api/now/table/{table}/{sys_id}"}
+    for name, scenario in SCENARIOS.items():
+        call = scenario["call"]
+        expected = paths[call["method"]].format(**call["args"])
+        assert {e["path"] for e in scenario["exchanges"]} == {expected}, name
+
+
 def test_recording_names_no_instance():
     hosts = set(re.findall(r"[\w.-]+\.service-now\.com", TEXT))
     assert hosts <= {INSTANCE.split("//")[1]}
