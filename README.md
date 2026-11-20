@@ -11,8 +11,7 @@ OAuth client approved, and a service-account request measured in weeks. snowq
 reads the same records the web UI already shows you, over the same session.
 
 ```sh
-uv sync --extra login
-uv run playwright install chromium   # skip with --channel chrome / msedge
+python3 util/setup.py                # uv sync + Playwright's Chromium (python util\setup.py on Windows)
 
 snowq -i acme login                  # finish SSO in the browser that opens
 snowq -i acme query incident -q "active=true^priority=1" -n 10 -o table
@@ -38,6 +37,22 @@ login capture, the `X-UserToken-Response` header, or `/navpage.do`), calls
 When the session expires, snowq exits with code 3 and tells you to log in again.
 
 ## Install
+
+```sh
+python3 util/setup.py                 # python util\setup.py on Windows
+```
+
+It needs only uv and any Python 3.9+. It syncs `.venv` with the `login` extra,
+downloads Playwright's Chromium, launches it once to prove it starts, and ends with
+`./snowq doctor`. Flags:
+
+| Flag | Use it when |
+|---|---|
+| `--all` | You also want `import-browser` (adds browser-cookie3). |
+| `--no-browser` | `cdn.playwright.dev` is blocked, or you will log in with `--channel chrome` / `msedge`. |
+| `--with-deps` | Linux, and Chromium installed but will not start: installs its system libraries through sudo. |
+
+By hand, the same thing is:
 
 ```sh
 uv sync --extra login                 # or --extra all to include browser-cookie import

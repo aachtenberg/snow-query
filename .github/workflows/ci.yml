@@ -73,3 +73,25 @@ jobs:
           if ($LASTEXITCODE -ne 3) { throw "expected exit 3, got $LASTEXITCODE" }
           # pwsh steps exit with $LASTEXITCODE, which is the 3 we just asserted
           exit 0
+
+  setup:
+    name: util/setup.py (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      # Stdlib-only, so the runner's own Python is enough to start it. It fails
+      # unless the sync, the Chromium download, a headless launch and doctor all
+      # succeed. Linux runners need Chromium's system libraries (--with-deps).
+      - if: runner.os == 'Linux'
+        run: python3 util/setup.py --with-deps
+      - if: runner.os == 'macOS'
+        run: python3 util/setup.py
+      - if: runner.os == 'Windows'
+        run: python util\setup.py

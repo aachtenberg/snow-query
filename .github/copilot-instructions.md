@@ -50,6 +50,9 @@ successful install; `python -m snowq` needs `PYTHONPATH=src`.
 
 ## Working on this repository
 
+- `python3 util/setup.py` installs everything: the venv with the `login`
+  extra, Playwright's Chromium, and a check that Chromium starts. It is
+  stdlib-only, so it runs before anything else is installed.
 - `uv run pytest` runs everything, including the check that the per-tool agent
   files still match this one.
 - **CLAUDE.md, `.clinerules`, `.windsurfrules`, `.cursor/rules/`,

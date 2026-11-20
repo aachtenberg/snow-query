@@ -8,3 +8,6 @@ dist/
 sessions/
 # A Cookie header pasted from devtools is one too.
 cookie.txt
+# Local instance URLs and credentials.
+.env
+.env.*
