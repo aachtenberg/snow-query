@@ -1,0 +1,1263 @@
+{
+ "about": "Recorded by util/record_fixtures.py from a developer instance seeded by util/seed_dev.py. Re-record rather than hand-edit.",
+ "instance": "https://acme.service-now.com",
+ "scenarios": {
+  "awaiting_vendor_count": {
+   "call": {
+    "args": {
+     "query": "correlation_idSTARTSWITHsnowq-seed^state=18",
+     "table": "incident"
+    },
+    "method": "count"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": {
+       "stats": {
+        "count": "3"
+       }
+      }
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_count": "true",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^state=18"
+     },
+     "path": "/api/now/stats/incident",
+     "status": 200
+    },
+    {
+     "body": {
+      "result": [
+       {
+        "sys_id": "b769f62383a41310403efcb6feaad363"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "sys_id",
+      "sysparm_limit": "1",
+      "sysparm_offset": "0",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^ORDERBYcorrelation_id"
+     },
+     "path": "/api/now/table/incident",
+     "status": 200
+    }
+   ]
+  },
+  "business_impact_choices": {
+   "call": {
+    "args": {
+     "fields": [
+      "value",
+      "label"
+     ],
+     "limit": null,
+     "order_by": "sequence",
+     "query": "name=incident^element=u_business_impact^language=en",
+     "table": "sys_choice"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": [
+       {
+        "label": "Revenue loss",
+        "value": "10"
+       },
+       {
+        "label": "Regulatory exposure",
+        "value": "20"
+       },
+       {
+        "label": "Customer facing",
+        "value": "30"
+       },
+       {
+        "label": "Internal only",
+        "value": "40"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "value,label",
+      "sysparm_limit": "500",
+      "sysparm_offset": "0",
+      "sysparm_query": "name=incident^element=u_business_impact^language=en^ORDERBYsequence"
+     },
+     "path": "/api/now/table/sys_choice",
+     "status": 200
+    }
+   ]
+  },
+  "custom_fields": {
+   "call": {
+    "args": {
+     "fields": [
+      "element",
+      "column_label",
+      "internal_type"
+     ],
+     "limit": null,
+     "order_by": "element",
+     "query": "name=incident^elementSTARTSWITHu_",
+     "table": "sys_dictionary"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": [
+       {
+        "column_label": "Business impact",
+        "element": "u_business_impact",
+        "internal_type": "integer"
+       },
+       {
+        "column_label": "Escalate to",
+        "element": "u_escalation_group",
+        "internal_type": "reference"
+       },
+       {
+        "column_label": "SOX in scope",
+        "element": "u_regulated",
+        "internal_type": "boolean"
+       },
+       {
+        "column_label": "Vendor reference",
+        "element": "u_vendor_ticket",
+        "internal_type": "string"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "element,column_label,internal_type",
+      "sysparm_limit": "500",
+      "sysparm_offset": "0",
+      "sysparm_query": "name=incident^elementSTARTSWITHu_^ORDERBYelement"
+     },
+     "path": "/api/now/table/sys_dictionary",
+     "status": 200
+    }
+   ]
+  },
+  "escalated_to_storage": {
+   "call": {
+    "args": {
+     "display_value": true,
+     "fields": [
+      "number",
+      "u_escalation_group"
+     ],
+     "limit": null,
+     "query": "correlation_idSTARTSWITHsnowq-seed^u_escalation_group.name=snowq-seed Storage Platform",
+     "table": "incident"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": [
+       {
+        "number": "INC0010021",
+        "u_escalation_group": "snowq-seed Storage Platform"
+       },
+       {
+        "number": "INC0010015",
+        "u_escalation_group": "snowq-seed Storage Platform"
+       },
+       {
+        "number": "INC0010025",
+        "u_escalation_group": "snowq-seed Storage Platform"
+       },
+       {
+        "number": "INC0010018",
+        "u_escalation_group": "snowq-seed Storage Platform"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "true",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "number,u_escalation_group",
+      "sysparm_limit": "500",
+      "sysparm_offset": "0",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^u_escalation_group.name=snowq-seed Storage Platform"
+     },
+     "path": "/api/now/table/incident",
+     "status": 200
+    }
+   ]
+  },
+  "impact_choices_on_incident": {
+   "call": {
+    "args": {
+     "fields": [
+      "value",
+      "label"
+     ],
+     "limit": null,
+     "query": "name=incident^element=impact^inactive=false^language=en",
+     "table": "sys_choice"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": []
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "value,label",
+      "sysparm_limit": "500",
+      "sysparm_offset": "0",
+      "sysparm_query": "name=incident^element=impact^inactive=false^language=en"
+     },
+     "path": "/api/now/table/sys_choice",
+     "status": 200
+    }
+   ]
+  },
+  "impact_choices_on_task": {
+   "call": {
+    "args": {
+     "fields": [
+      "value",
+      "label"
+     ],
+     "limit": null,
+     "query": "name=task^element=impact^inactive=false^language=en",
+     "table": "sys_choice"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": [
+       {
+        "label": "1 - High",
+        "value": "1"
+       },
+       {
+        "label": "2 - Medium",
+        "value": "2"
+       },
+       {
+        "label": "3 - Low",
+        "value": "3"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "value,label",
+      "sysparm_limit": "500",
+      "sysparm_offset": "0",
+      "sysparm_query": "name=task^element=impact^inactive=false^language=en"
+     },
+     "path": "/api/now/table/sys_choice",
+     "status": 200
+    }
+   ]
+  },
+  "one_record_all": {
+   "call": {
+    "args": {
+     "display_value": "all",
+     "sys_id": "b769f62383a41310403efcb6feaad363",
+     "table": "incident"
+    },
+    "method": "get_record"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": {
+       "active": {
+        "display_value": "true",
+        "value": "true"
+       },
+       "activity_due": {
+        "display_value": "UNKNOWN",
+        "value": ""
+       },
+       "additional_assignee_list": {
+        "display_value": "",
+        "value": ""
+       },
+       "approval": {
+        "display_value": "Not Yet Requested",
+        "value": "not requested"
+       },
+       "approval_history": {
+        "display_value": "",
+        "value": ""
+       },
+       "approval_set": {
+        "display_value": "",
+        "value": ""
+       },
+       "assigned_to": {
+        "display_value": "",
+        "value": ""
+       },
+       "assignment_group": {
+        "display_value": "snowq-seed Database Platform",
+        "value": "eb69f62383a41310403efcb6feaad34c"
+       },
+       "business_duration": {
+        "display_value": "",
+        "value": ""
+       },
+       "business_impact": {
+        "display_value": "",
+        "value": ""
+       },
+       "business_service": {
+        "display_value": "",
+        "value": ""
+       },
+       "business_stc": {
+        "display_value": "",
+        "value": ""
+       },
+       "calendar_duration": {
+        "display_value": "",
+        "value": ""
+       },
+       "calendar_stc": {
+        "display_value": "",
+        "value": ""
+       },
+       "caller_id": {
+        "display_value": "",
+        "value": ""
+       },
+       "category": {
+        "display_value": "Inquiry",
+        "value": "inquiry"
+       },
+       "cause": {
+        "display_value": "",
+        "value": ""
+       },
+       "child_incidents": {
+        "display_value": "0",
+        "value": "0"
+       },
+       "close_code": {
+        "display_value": null,
+        "value": ""
+       },
+       "close_notes": {
+        "display_value": "",
+        "value": ""
+       },
+       "closed_at": {
+        "display_value": "",
+        "value": ""
+       },
+       "closed_by": {
+        "display_value": "",
+        "value": ""
+       },
+       "cmdb_ci": {
+        "display_value": "snowq-seed-db02",
+        "value": "eb69f62383a41310403efcb6feaad35c"
+       },
+       "comments": {
+        "display_value": "",
+        "value": ""
+       },
+       "comments_and_work_notes": {
+        "display_value": "",
+        "value": ""
+       },
+       "company": {
+        "display_value": "",
+        "value": ""
+       },
+       "contact_type": {
+        "display_value": null,
+        "value": ""
+       },
+       "contract": {
+        "display_value": "",
+        "value": ""
+       },
+       "correlation_display": {
+        "display_value": "",
+        "value": ""
+       },
+       "correlation_id": {
+        "display_value": "snowq-seed-01",
+        "value": "snowq-seed-01"
+       },
+       "delivery_plan": {
+        "display_value": "",
+        "value": ""
+       },
+       "delivery_task": {
+        "display_value": "",
+        "value": ""
+       },
+       "description": {
+        "display_value": "Created by util/seed_dev.py in the snowq repository; remove with --clean.",
+        "value": "Created by util/seed_dev.py in the snowq repository; remove with --clean."
+       },
+       "due_date": {
+        "display_value": "",
+        "value": ""
+       },
+       "escalation": {
+        "display_value": "Normal",
+        "value": "0"
+       },
+       "expected_start": {
+        "display_value": "",
+        "value": ""
+       },
+       "follow_up": {
+        "display_value": "",
+        "value": ""
+       },
+       "group_list": {
+        "display_value": "",
+        "value": ""
+       },
+       "hold_reason": {
+        "display_value": "",
+        "value": ""
+       },
+       "impact": {
+        "display_value": "2 - Medium",
+        "value": "2"
+       },
+       "incident_state": {
+        "display_value": "In Progress",
+        "value": "2"
+       },
+       "knowledge": {
+        "display_value": "false",
+        "value": "false"
+       },
+       "location": {
+        "display_value": "",
+        "value": ""
+       },
+       "made_sla": {
+        "display_value": "true",
+        "value": "true"
+       },
+       "notify": {
+        "display_value": "Do Not Notify",
+        "value": "1"
+       },
+       "number": {
+        "display_value": "INC0010014",
+        "value": "INC0010014"
+       },
+       "opened_at": {
+        "display_value": "2026-11-19 07:23:44",
+        "value": "2026-11-19 15:23:44"
+       },
+       "opened_by": {
+        "display_value": "System Administrator",
+        "value": "6816f79cc0a8016401c5a33be04be441"
+       },
+       "order": {
+        "display_value": "",
+        "value": ""
+       },
+       "origin_id": {
+        "display_value": "",
+        "value": ""
+       },
+       "origin_table": {
+        "display_value": "",
+        "value": ""
+       },
+       "parent": {
+        "display_value": "",
+        "value": ""
+       },
+       "parent_incident": {
+        "display_value": "",
+        "value": ""
+       },
+       "priority": {
+        "display_value": "3 - Moderate",
+        "value": "3"
+       },
+       "reassignment_count": {
+        "display_value": "0",
+        "value": "0"
+       },
+       "reopen_count": {
+        "display_value": "0",
+        "value": "0"
+       },
+       "reopened_by": {
+        "display_value": "",
+        "value": ""
+       },
+       "reopened_time": {
+        "display_value": "",
+        "value": ""
+       },
+       "resolved_at": {
+        "display_value": "",
+        "value": ""
+       },
+       "resolved_by": {
+        "display_value": "",
+        "value": ""
+       },
+       "route_reason": {
+        "display_value": "",
+        "value": ""
+       },
+       "service_offering": {
+        "display_value": "",
+        "value": ""
+       },
+       "severity": {
+        "display_value": "3 - Low",
+        "value": "3"
+       },
+       "short_description": {
+        "display_value": "Replica lag on the reporting database",
+        "value": "Replica lag on the reporting database"
+       },
+       "sla_due": {
+        "display_value": "UNKNOWN",
+        "value": ""
+       },
+       "state": {
+        "display_value": "In Progress",
+        "value": "2"
+       },
+       "subcategory": {
+        "display_value": null,
+        "value": ""
+       },
+       "sys_class_name": {
+        "display_value": "Incident",
+        "value": "incident"
+       },
+       "sys_created_by": {
+        "display_value": "admin",
+        "value": "admin"
+       },
+       "sys_created_on": {
+        "display_value": "2026-11-20 08:23:44",
+        "value": "2026-11-20 16:23:44"
+       },
+       "sys_domain": {
+        "display_value": "global",
+        "value": "global"
+       },
+       "sys_domain_path": {
+        "display_value": "/",
+        "value": "/"
+       },
+       "sys_id": {
+        "display_value": "b769f62383a41310403efcb6feaad363",
+        "value": "b769f62383a41310403efcb6feaad363"
+       },
+       "sys_mod_count": {
+        "display_value": "0",
+        "value": "0"
+       },
+       "sys_tags": {
+        "display_value": "",
+        "value": ""
+       },
+       "sys_updated_by": {
+        "display_value": "admin",
+        "value": "admin"
+       },
+       "sys_updated_on": {
+        "display_value": "2026-11-20 08:23:44",
+        "value": "2026-11-20 16:23:44"
+       },
+       "task_effective_number": {
+        "display_value": "INC0010014",
+        "value": "INC0010014"
+       },
+       "time_worked": {
+        "display_value": "",
+        "value": ""
+       },
+       "u_business_impact": {
+        "display_value": "Customer facing",
+        "value": "30"
+       },
+       "u_escalation_group": {
+        "display_value": "",
+        "value": ""
+       },
+       "u_regulated": {
+        "display_value": "true",
+        "value": "true"
+       },
+       "u_vendor_ticket": {
+        "display_value": "",
+        "value": ""
+       },
+       "universal_request": {
+        "display_value": "",
+        "value": ""
+       },
+       "upon_approval": {
+        "display_value": "Proceed to Next Task",
+        "value": "proceed"
+       },
+       "upon_reject": {
+        "display_value": "Cancel all future Tasks",
+        "value": "cancel"
+       },
+       "urgency": {
+        "display_value": "2 - Medium",
+        "value": "2"
+       },
+       "user_input": {
+        "display_value": "",
+        "value": ""
+       },
+       "watch_list": {
+        "display_value": "",
+        "value": ""
+       },
+       "work_end": {
+        "display_value": "",
+        "value": ""
+       },
+       "work_notes": {
+        "display_value": "",
+        "value": ""
+       },
+       "work_notes_list": {
+        "display_value": "",
+        "value": ""
+       },
+       "work_start": {
+        "display_value": "",
+        "value": ""
+       }
+      }
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "all",
+      "sysparm_exclude_reference_link": "true"
+     },
+     "path": "/api/now/table/incident/b769f62383a41310403efcb6feaad363",
+     "status": 200
+    }
+   ]
+  },
+  "seeded_count": {
+   "call": {
+    "args": {
+     "query": "correlation_idSTARTSWITHsnowq-seed",
+     "table": "incident"
+    },
+    "method": "count"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": {
+       "stats": {
+        "count": "12"
+       }
+      }
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_count": "true",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed"
+     },
+     "path": "/api/now/stats/incident",
+     "status": 200
+    }
+   ]
+  },
+  "seeded_display": {
+   "call": {
+    "args": {
+     "display_value": true,
+     "fields": [
+      "number",
+      "correlation_id",
+      "short_description",
+      "state",
+      "close_code",
+      "assignment_group",
+      "u_business_impact",
+      "u_vendor_ticket",
+      "u_regulated",
+      "u_escalation_group"
+     ],
+     "limit": null,
+     "order_by": "correlation_id",
+     "query": "correlation_idSTARTSWITHsnowq-seed",
+     "table": "incident"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": [
+       {
+        "assignment_group": "snowq-seed Database Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-01",
+        "number": "INC0010014",
+        "short_description": "Replica lag on the reporting database",
+        "state": "In Progress",
+        "u_business_impact": "Customer facing",
+        "u_escalation_group": "",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "snowq-seed Database Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-02",
+        "number": "INC0010015",
+        "short_description": "Nightly export job missed its window",
+        "state": "New",
+        "u_business_impact": "Regulatory exposure",
+        "u_escalation_group": "snowq-seed Storage Platform",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "snowq-seed Storage Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-03",
+        "number": "INC0010016",
+        "short_description": "Storage array firmware fault, vendor engaged",
+        "state": "Awaiting Vendor",
+        "u_business_impact": "Revenue loss",
+        "u_escalation_group": "",
+        "u_regulated": "false",
+        "u_vendor_ticket": "VND-88412"
+       },
+       {
+        "assignment_group": "snowq-seed Storage Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-04",
+        "number": "INC0010017",
+        "short_description": "Backup volume at 95% capacity",
+        "state": "In Progress",
+        "u_business_impact": "Internal only",
+        "u_escalation_group": "",
+        "u_regulated": "false",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "snowq-seed Database Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-05",
+        "number": "INC0010018",
+        "short_description": "Database licence key rejected after renewal",
+        "state": "Awaiting Vendor",
+        "u_business_impact": "Regulatory exposure",
+        "u_escalation_group": "snowq-seed Storage Platform",
+        "u_regulated": "true",
+        "u_vendor_ticket": "VND-88519"
+       },
+       {
+        "assignment_group": "snowq-seed Database Platform",
+        "close_code": "Resolved – Fixed by Caller",
+        "correlation_id": "snowq-seed-06",
+        "number": "INC0010019",
+        "short_description": "Slow queries on the finance ledger schema",
+        "state": "Resolved",
+        "u_business_impact": "",
+        "u_escalation_group": "",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "snowq-seed Storage Platform",
+        "close_code": "Resolved – Fixed by Caller",
+        "correlation_id": "snowq-seed-07",
+        "number": "INC0010020",
+        "short_description": "NAS share read-only after failover",
+        "state": "Resolved",
+        "u_business_impact": "Revenue loss",
+        "u_escalation_group": "snowq-seed Database Platform",
+        "u_regulated": "false",
+        "u_vendor_ticket": "VND-87001"
+       },
+       {
+        "assignment_group": "snowq-seed Database Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-08",
+        "number": "INC0010021",
+        "short_description": "Replica out of sync after patching",
+        "state": "Awaiting Vendor",
+        "u_business_impact": "Customer facing",
+        "u_escalation_group": "snowq-seed Storage Platform",
+        "u_regulated": "true",
+        "u_vendor_ticket": "VND-88600"
+       },
+       {
+        "assignment_group": "snowq-seed Storage Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-09",
+        "number": "INC0010022",
+        "short_description": "Snapshot schedule not running",
+        "state": "New",
+        "u_business_impact": "",
+        "u_escalation_group": "",
+        "u_regulated": "false",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "snowq-seed Database Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-10",
+        "number": "INC0010023",
+        "short_description": "Audit trail table growing unbounded",
+        "state": "In Progress",
+        "u_business_impact": "Regulatory exposure",
+        "u_escalation_group": "",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "snowq-seed Storage Platform",
+        "close_code": "Resolved – Fixed by Caller",
+        "correlation_id": "snowq-seed-11",
+        "number": "INC0010024",
+        "short_description": "Disk latency alerts on the NAS head",
+        "state": "Resolved",
+        "u_business_impact": "Internal only",
+        "u_escalation_group": "",
+        "u_regulated": "false",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "snowq-seed Database Platform",
+        "close_code": null,
+        "correlation_id": "snowq-seed-12",
+        "number": "INC0010025",
+        "short_description": "Connection pool exhausted during month-end",
+        "state": "New",
+        "u_business_impact": "Revenue loss",
+        "u_escalation_group": "snowq-seed Storage Platform",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "true",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "number,correlation_id,short_description,state,close_code,assignment_group,u_business_impact,u_vendor_ticket,u_regulated,u_escalation_group",
+      "sysparm_limit": "500",
+      "sysparm_offset": "0",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^ORDERBYcorrelation_id"
+     },
+     "path": "/api/now/table/incident",
+     "status": 200
+    }
+   ]
+  },
+  "seeded_paged": {
+   "call": {
+    "args": {
+     "fields": [
+      "number"
+     ],
+     "limit": null,
+     "order_by": "correlation_id",
+     "page_size": 5,
+     "query": "correlation_idSTARTSWITHsnowq-seed",
+     "table": "incident"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": [
+       {
+        "number": "INC0010014"
+       },
+       {
+        "number": "INC0010015"
+       },
+       {
+        "number": "INC0010016"
+       },
+       {
+        "number": "INC0010017"
+       },
+       {
+        "number": "INC0010018"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "number",
+      "sysparm_limit": "5",
+      "sysparm_offset": "0",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^ORDERBYcorrelation_id"
+     },
+     "path": "/api/now/table/incident",
+     "status": 200
+    },
+    {
+     "body": {
+      "result": [
+       {
+        "number": "INC0010019"
+       },
+       {
+        "number": "INC0010020"
+       },
+       {
+        "number": "INC0010021"
+       },
+       {
+        "number": "INC0010022"
+       },
+       {
+        "number": "INC0010023"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "number",
+      "sysparm_limit": "5",
+      "sysparm_offset": "5",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^ORDERBYcorrelation_id"
+     },
+     "path": "/api/now/table/incident",
+     "status": 200
+    },
+    {
+     "body": {
+      "result": [
+       {
+        "number": "INC0010024"
+       },
+       {
+        "number": "INC0010025"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "number",
+      "sysparm_limit": "5",
+      "sysparm_offset": "10",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^ORDERBYcorrelation_id"
+     },
+     "path": "/api/now/table/incident",
+     "status": 200
+    }
+   ]
+  },
+  "seeded_raw": {
+   "call": {
+    "args": {
+     "fields": [
+      "number",
+      "correlation_id",
+      "short_description",
+      "state",
+      "close_code",
+      "assignment_group",
+      "u_business_impact",
+      "u_vendor_ticket",
+      "u_regulated",
+      "u_escalation_group"
+     ],
+     "limit": null,
+     "order_by": "correlation_id",
+     "query": "correlation_idSTARTSWITHsnowq-seed",
+     "table": "incident"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": [
+       {
+        "assignment_group": "eb69f62383a41310403efcb6feaad34c",
+        "close_code": "",
+        "correlation_id": "snowq-seed-01",
+        "number": "INC0010014",
+        "short_description": "Replica lag on the reporting database",
+        "state": "2",
+        "u_business_impact": "30",
+        "u_escalation_group": "",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "eb69f62383a41310403efcb6feaad34c",
+        "close_code": "",
+        "correlation_id": "snowq-seed-02",
+        "number": "INC0010015",
+        "short_description": "Nightly export job missed its window",
+        "state": "1",
+        "u_business_impact": "20",
+        "u_escalation_group": "ef69f62383a41310403efcb6feaad352",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "ef69f62383a41310403efcb6feaad352",
+        "close_code": "",
+        "correlation_id": "snowq-seed-03",
+        "number": "INC0010016",
+        "short_description": "Storage array firmware fault, vendor engaged",
+        "state": "18",
+        "u_business_impact": "10",
+        "u_escalation_group": "",
+        "u_regulated": "false",
+        "u_vendor_ticket": "VND-88412"
+       },
+       {
+        "assignment_group": "ef69f62383a41310403efcb6feaad352",
+        "close_code": "",
+        "correlation_id": "snowq-seed-04",
+        "number": "INC0010017",
+        "short_description": "Backup volume at 95% capacity",
+        "state": "2",
+        "u_business_impact": "40",
+        "u_escalation_group": "",
+        "u_regulated": "false",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "eb69f62383a41310403efcb6feaad34c",
+        "close_code": "",
+        "correlation_id": "snowq-seed-05",
+        "number": "INC0010018",
+        "short_description": "Database licence key rejected after renewal",
+        "state": "18",
+        "u_business_impact": "20",
+        "u_escalation_group": "ef69f62383a41310403efcb6feaad352",
+        "u_regulated": "true",
+        "u_vendor_ticket": "VND-88519"
+       },
+       {
+        "assignment_group": "eb69f62383a41310403efcb6feaad34c",
+        "close_code": "Resolved by caller",
+        "correlation_id": "snowq-seed-06",
+        "number": "INC0010019",
+        "short_description": "Slow queries on the finance ledger schema",
+        "state": "6",
+        "u_business_impact": "",
+        "u_escalation_group": "",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "ef69f62383a41310403efcb6feaad352",
+        "close_code": "Resolved by caller",
+        "correlation_id": "snowq-seed-07",
+        "number": "INC0010020",
+        "short_description": "NAS share read-only after failover",
+        "state": "6",
+        "u_business_impact": "10",
+        "u_escalation_group": "eb69f62383a41310403efcb6feaad34c",
+        "u_regulated": "false",
+        "u_vendor_ticket": "VND-87001"
+       },
+       {
+        "assignment_group": "eb69f62383a41310403efcb6feaad34c",
+        "close_code": "",
+        "correlation_id": "snowq-seed-08",
+        "number": "INC0010021",
+        "short_description": "Replica out of sync after patching",
+        "state": "18",
+        "u_business_impact": "30",
+        "u_escalation_group": "ef69f62383a41310403efcb6feaad352",
+        "u_regulated": "true",
+        "u_vendor_ticket": "VND-88600"
+       },
+       {
+        "assignment_group": "ef69f62383a41310403efcb6feaad352",
+        "close_code": "",
+        "correlation_id": "snowq-seed-09",
+        "number": "INC0010022",
+        "short_description": "Snapshot schedule not running",
+        "state": "1",
+        "u_business_impact": "",
+        "u_escalation_group": "",
+        "u_regulated": "false",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "eb69f62383a41310403efcb6feaad34c",
+        "close_code": "",
+        "correlation_id": "snowq-seed-10",
+        "number": "INC0010023",
+        "short_description": "Audit trail table growing unbounded",
+        "state": "2",
+        "u_business_impact": "20",
+        "u_escalation_group": "",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "ef69f62383a41310403efcb6feaad352",
+        "close_code": "Resolved by caller",
+        "correlation_id": "snowq-seed-11",
+        "number": "INC0010024",
+        "short_description": "Disk latency alerts on the NAS head",
+        "state": "6",
+        "u_business_impact": "40",
+        "u_escalation_group": "",
+        "u_regulated": "false",
+        "u_vendor_ticket": ""
+       },
+       {
+        "assignment_group": "eb69f62383a41310403efcb6feaad34c",
+        "close_code": "",
+        "correlation_id": "snowq-seed-12",
+        "number": "INC0010025",
+        "short_description": "Connection pool exhausted during month-end",
+        "state": "1",
+        "u_business_impact": "10",
+        "u_escalation_group": "ef69f62383a41310403efcb6feaad352",
+        "u_regulated": "true",
+        "u_vendor_ticket": ""
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "number,correlation_id,short_description,state,close_code,assignment_group,u_business_impact,u_vendor_ticket,u_regulated,u_escalation_group",
+      "sysparm_limit": "500",
+      "sysparm_offset": "0",
+      "sysparm_query": "correlation_idSTARTSWITHsnowq-seed^ORDERBYcorrelation_id"
+     },
+     "path": "/api/now/table/incident",
+     "status": 200
+    }
+   ]
+  },
+  "state_choices": {
+   "call": {
+    "args": {
+     "fields": [
+      "value",
+      "label"
+     ],
+     "limit": null,
+     "order_by": "sequence",
+     "query": "name=incident^element=state^inactive=false^language=en",
+     "table": "sys_choice"
+    },
+    "method": "table"
+   },
+   "exchanges": [
+    {
+     "body": {
+      "result": [
+       {
+        "label": "New",
+        "value": "1"
+       },
+       {
+        "label": "In Progress",
+        "value": "2"
+       },
+       {
+        "label": "On Hold",
+        "value": "3"
+       },
+       {
+        "label": "Awaiting Vendor",
+        "value": "18"
+       },
+       {
+        "label": "Resolved",
+        "value": "6"
+       },
+       {
+        "label": "Closed",
+        "value": "7"
+       },
+       {
+        "label": "Canceled",
+        "value": "8"
+       }
+      ]
+     },
+     "content_type": "application/json;charset=UTF-8",
+     "method": "GET",
+     "params": {
+      "sysparm_display_value": "false",
+      "sysparm_exclude_reference_link": "true",
+      "sysparm_fields": "value,label",
+      "sysparm_limit": "500",
+      "sysparm_offset": "0",
+      "sysparm_query": "name=incident^element=state^inactive=false^language=en^ORDERBYsequence"
+     },
+     "path": "/api/now/table/sys_choice",
+     "status": 200
+    }
+   ]
+  }
+ }
+}
