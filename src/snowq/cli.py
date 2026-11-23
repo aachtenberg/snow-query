@@ -100,8 +100,30 @@ def _stray_list_hint(extras: list[str]) -> str | None:
     return None
 
 
+def _glue_descending_order(argv: list[str]) -> list[str]:
+    """Turn ``--order-by -opened_at`` into ``--order-by=-opened_at``.
+
+    argparse reads a value that starts with ``-`` as the next option, so the
+    descending form the help text describes would otherwise exit 2. A bare
+    two-character token such as ``-n`` is left alone: that is a real option.
+    """
+    out: list[str] = []
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        nxt = argv[i + 1] if i + 1 < len(argv) else ""
+        if arg == "--order-by" and nxt.startswith("-") and not nxt.startswith("--") and len(nxt) > 2:
+            out.append(f"{arg}={nxt}")
+            i += 2
+            continue
+        out.append(arg)
+        i += 1
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
+    argv = _glue_descending_order(sys.argv[1:] if argv is None else list(argv))
     args, extras = parser.parse_known_args(argv)
     if extras:
         print(f"snowq: unrecognized arguments: {' '.join(extras)}", file=sys.stderr)

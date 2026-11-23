@@ -169,8 +169,40 @@ def import_from_browser(instance: str, browser: str = "chrome") -> StoredSession
     return StoredSession(normalize_instance(instance), cookies, source=f"browser:{browser}")
 
 
-# Polled in the page after SSO: once g_ck exists, the session is fully established.
+# Polled in the page while you log in. g_ck alone proves nothing: the guest
+# session has one too, and an instance with a local login form serves that form
+# from navpage.do itself, on the instance host, before anyone has signed in.
 _G_CK_JS = "() => (window.g_ck || (window.NOW && window.NOW.g_ck) || null)"
+
+# The question whoami asks, put through the browser's own cookies.
+_WHOAMI_PATH = "/api/now/table/sys_user"
+_WHOAMI_PARAMS = {
+    "sysparm_query": "sys_id=javascript:gs.getUserID()",
+    "sysparm_fields": "user_name",
+    "sysparm_limit": "1",
+}
+
+
+def _signed_in(request, base: str, g_ck: str) -> bool:
+    """True once the browser's session belongs to a real user, not the guest.
+
+    ``request`` is the Playwright context's APIRequestContext, which shares the
+    browser's cookies. Anything short of a JSON row naming a user — a 401, a
+    redirect, an HTML page, a request torn down by navigation — means "not yet".
+    """
+    try:
+        r = request.get(
+            base + _WHOAMI_PATH,
+            params=_WHOAMI_PARAMS,
+            headers={"X-UserToken": g_ck, "Accept": "application/json"},
+            max_redirects=0,
+        )
+        if not r.ok:
+            return False
+        rows = r.json().get("result") or []
+    except Exception:
+        return False
+    return bool(rows) and rows[0].get("user_name") not in (None, "", "guest")
 
 
 def login_with_browser(
@@ -179,7 +211,7 @@ def login_with_browser(
     timeout_s: int = 300,
     profile_dir: Path | None = None,
 ) -> StoredSession:
-    """Open a browser at the instance, wait for you to finish SSO, capture the session.
+    """Open a browser at the instance, wait for you to log in, capture the session.
 
     ``channel`` picks an installed browser ("chrome", "msedge") instead of
     Playwright's bundled Chromium — use it when your IdP requires a managed
@@ -212,10 +244,11 @@ def login_with_browser(
             while time.monotonic() < deadline:
                 if urlparse(page.url).hostname == host:
                     try:
-                        g_ck = page.evaluate(_G_CK_JS)
+                        token = page.evaluate(_G_CK_JS)
                     except Exception:
-                        g_ck = None  # page mid-navigation
-                    if g_ck:
+                        token = None  # page mid-navigation
+                    if token and _signed_in(ctx.request, base, token):
+                        g_ck = token
                         break
                 page.wait_for_timeout(1000)
             if not g_ck:

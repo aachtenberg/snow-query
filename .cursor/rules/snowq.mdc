@@ -19,6 +19,11 @@ snowq query sys_dictionary -q "name=incident^elementSTARTSWITHu_" -f element,col
 snowq query sys_choice -q "name=incident^element=state" -f value,label -n 0 -o table
 ```
 
+No `sys_choice` rows does not mean no choices: a field inherited from `task`
+(`impact`, `urgency` on incident) keeps them on `task` unless the child table
+overrides them. Ask for `nameINincident,task` and use the incident rows if
+there are any.
+
 **`-q` takes an encoded query, not SQL.** `^` is AND, `^OR` is OR, `LIKE`,
 `STARTSWITH`, `IN` (no spaces), `ISEMPTY`, `RELATIVEGE@day@ago@30`. Dot-walk to
 reference fields: `assignment_group.name=Database Platform`.
@@ -53,6 +58,14 @@ successful install; `python -m snowq` needs `PYTHONPATH=src`.
 
 ## Working on this repository
 
+- `python3 util/setup.py` installs everything: the venv with the `login`
+  extra, Playwright's Chromium, and a check that Chromium starts. It is
+  stdlib-only, so it runs before anything else is installed.
+- `util/seed_dev.py` customises a personal developer instance (custom `u_`
+  fields, a non-standard state, tagged records; `--clean` undoes it), and
+  `util/record_fixtures.py` records `tests/fixtures/` from it for
+  `tests/test_fixtures.py`. Re-record rather than hand-edit a fixture. See
+  [docs/dev-instance.md](docs/dev-instance.md).
 - `uv run pytest` runs everything, including the check that the per-tool agent
   files still match this one.
 - **CLAUDE.md, `.clinerules`, `.windsurfrules`, `.cursor/rules/`,

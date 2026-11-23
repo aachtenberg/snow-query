@@ -267,6 +267,20 @@ def test_csv_still_emits_every_field(capsys):
     assert capsys.readouterr().out.splitlines()[0] == "number,state,u_blank"
 
 
+@pytest.mark.parametrize("order", [["--order-by", "-opened_at"], ["--order-by=-opened_at"]])
+def test_descending_order_by_parses(order):
+    # The documented `--order-by -opened_at` used to exit 2: argparse took the
+    # value for an option.
+    argv = cli._glue_descending_order(["-i", "acme", "query", "incident", *order, "-n", "5"])
+    args = cli.build_parser().parse_args(argv)
+    assert (args.order_by, args.limit) == ("-opened_at", 5)
+
+
+def test_order_by_does_not_swallow_a_real_option():
+    argv = ["-i", "acme", "query", "incident", "--order-by", "-n", "5"]
+    assert cli._glue_descending_order(argv) == argv
+
+
 def test_stray_comma_list_is_explained(capsys):
     # `-f number, short_description,state` reaches argparse as two arguments
     argv = ["-i", "acme", "query", "incident", "-f", "number,", "short_description,state"]
